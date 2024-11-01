@@ -5,6 +5,17 @@ Indexer that creates a queryable dataset for Luckycoin.
 A version of this indexer can be found at:
 https://feelinglucky.satsignal.io/
 
+## Error response
+
+All error responses will return a 200 status code with a JSON body containing the error message. You should
+check agains thtis by seeing if the error key is present in the response.
+
+```json
+{
+  "error": { "code": 404, "message": "Not Found" }
+}
+```
+
 ## /block
 
 #### GET /block/{blocknumber}
