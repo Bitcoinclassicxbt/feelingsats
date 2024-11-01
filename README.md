@@ -1,6 +1,6 @@
-# Luckycoin indexer
+# FeelingLucky
 
-Indexer that creates a queryable dataset for Luckycoin.
+Feelinglucky is an indexer that creates a queryable dataset for Luckycoin.
 
 A version of this indexer can be found at:
 https://feelinglucky.satsignal.io/
