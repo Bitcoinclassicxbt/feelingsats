@@ -49,7 +49,7 @@ UtxoRouter.get(
       );
 
       if (addressUtxos.length === 0) {
-        res.json({ error: "No UTXOs found" });
+        res.json([]);
         return;
       }
 
@@ -83,7 +83,7 @@ UtxoRouter.get(
         res.json([addressUtxos[closestIndex + 1]]);
         return;
       }
-      res.json({ error: "No UTXOs found" });
+      res.json([]);
     } catch (e) {
       console.log(e);
       res.json({ error: "Internal server error" });
