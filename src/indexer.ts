@@ -119,7 +119,15 @@ export const runIndexer = async () => {
       log("Waiting for new blocks...");
 
       // Wait for new blocks using sleep from ./utils
-      await sleep(500); // Sleep for 60 seconds
+      while (true) {
+        await sleep(500); // Sleep for 60 seconds
+        try {
+          const block: BlockData = await getBlock(currentBlockNum + 1);
+          if (block) {
+            break;
+          }
+        } catch (e) {} //this is guaranteed to fail (we are actually checking if theres a failure to see if the block is there)
+      }
     }
   }
 };
