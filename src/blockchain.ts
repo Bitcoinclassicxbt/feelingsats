@@ -9,6 +9,6 @@ export const getBlock = async (blockNumber: number): Promise<BlockData> => {
     return data;
   } catch (e) {
     //console.dir(e.response.data);
-    throw "Error fetching block " + (e?.response?.data?.toString() ?? "");
+    throw "Error fetching block " + JSON.stringify(e?.response?.data ?? {});
   }
 };
