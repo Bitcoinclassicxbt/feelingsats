@@ -1,0 +1,126 @@
+# Luckycoin indexer
+
+Indexer that creates a queryable dataset for Luckycoin.
+
+A version of this indexer can be found at:
+https://feelinglucky.satsignal.io/
+
+## /block
+
+#### GET /block/{blocknumber}
+
+Get LKY block information by block number
+
+https://feelinglucky.satsignal.io/block/50
+
+success respose: 200
+
+```json
+{
+  "hash": "e4c406c29f2db53a0dbc640fed7c8473924d183e710eb08ae00eec6b515d1fc9",
+  "confirmations": 164708,
+  "strippedsize": 190,
+  "size": 190,
+  "weight": 760,
+  "height": 50,
+  "version": 1,
+  "versionHex": "00000001",
+  "merkleroot": "6fab347be1af789ff52cd0f4f9bd29433ac62338afbeb5bdbb48e8b0d8440d4e",
+  "tx": [
+    {
+      "txid": "6fab347be1af789ff52cd0f4f9bd29433ac62338afbeb5bdbb48e8b0d8440d4e",
+      "hash": "6fab347be1af789ff52cd0f4f9bd29433ac62338afbeb5bdbb48e8b0d8440d4e",
+      "size": 109,
+      "vsize": 109,
+      "version": 1,
+      "locktime": 0,
+      "vin": [
+        {
+          "coinbase": "04e39a9f51010a062f503253482f",
+          "sequence": 4294967295
+        }
+      ],
+      "vout": [
+        {
+          "value": 88,
+          "n": 0,
+          "scriptPubKey": {
+            "asm": "03f05ad912e322ab5e74ee57c1264540bde65db5154a536fe19999d31a65aaedb2 OP_CHECKSIG",
+            "hex": "2103f05ad912e322ab5e74ee57c1264540bde65db5154a536fe19999d31a65aaedb2ac",
+            "reqSigs": 1,
+            "type": "pubkey",
+            "addresses": ["LFz5TDhuxN8oejDvGtaGCJDTwbEW3Py2zY"]
+          }
+        }
+      ],
+      "rawHex": "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0e04e39a9f51010a062f503253482fffffffff010058850c02000000232103f05ad912e322ab5e74ee57c1264540bde65db5154a536fe19999d31a65aaedb2ac00000000"
+    }
+  ],
+  "time": 1369414371,
+  "mediantime": 1369414284,
+  "nonce": 4100587776,
+  "bits": "1e0ffff0",
+  "difficulty": 0.000244140625,
+  "chainwork": "0000000000000000000000000000000000000000000000000000000003300330",
+  "previousblockhash": "4319fcba3af30b0615bab400aca532e94f724debd7153451addad7b75045d4f6",
+  "nextblockhash": "e6024f86fbb78e8437af70144013b3590e1ab4899444ab76dab8bc7f0c5e943a"
+}
+```
+
+## /transaction
+
+#### POST /transaction/broadcast
+
+Broadcast a signed transaction on Luckycoin network
+
+https://feelinglucky.satsignal.io/transaction/broadcast
+
+success respose: 200
+
+```json
+{
+  "txid": "6fab347be1af789ff52cd0f4f9bd29433ac62338afbeb5bdbb48e8b0d8440d4e"
+}
+```
+
+## /utxos
+
+#### GET /utxos/all_by_address/{address}
+
+Get all UTXOs for a given address
+
+https://feelinglucky.satsignal.io/utxos/fetch_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy
+
+```json
+[
+  {
+    "txid": "3e72ca01728d0535755f66a3a6063316f4919fe54a5f4e3707c23b54ba18e5c7",
+    "vout": 1,
+    "address": "LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy",
+    "amount": "899995000",
+    "hex": "76a914e9c5b3dcb4db556e185a89825e9190bec6ecf63388ac",
+    "block": 163377,
+    "block_hash": "99402f16ca75fcea899a83f86b1f16cb264365d48736ff9713e934a247441f2b"
+  }
+]
+```
+
+#### GET /utxos/fetch_by_address/{address}/{amount_in_satoshi}
+
+Fetch relevant utxos for a given address and amount. Used for creating a transaction and wallet management.
+
+https://feelinglucky.satsignal.io/utxos/fetch_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy/500
+
+```json
+[
+  {
+    "txid": "3e72ca01728d0535755f66a3a6063316f4919fe54a5f4e3707c23b54ba18e5c7",
+    "vout": 1,
+    "address": "LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy",
+    "amount": "899995000",
+    "hex": "76a914e9c5b3dcb4db556e185a89825e9190bec6ecf63388ac",
+    "block": 163377,
+    "block_hash": "99402f16ca75fcea899a83f86b1f16cb264365d48736ff9713e934a247441f2b"
+  }
+]
+```

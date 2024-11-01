@@ -23,16 +23,19 @@ const fetchUtxosForAddress = async (
   });
 };
 
-UtxoRouter.get("/all_address/:address", async (req: Request, res: Response) => {
-  try {
-    res.json(await fetchUtxosForAddress(req.params.address, req.models));
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
+UtxoRouter.get(
+  "/all_by_address/:address",
+  async (req: Request, res: Response) => {
+    try {
+      res.json(await fetchUtxosForAddress(req.params.address, req.models));
+    } catch (e) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-});
+);
 
 UtxoRouter.get(
-  "/fetch_address/:address/:amount",
+  "/fetch_by_address/:address/:amount",
   async (req: Request, res: Response) => {
     try {
       if (isNaN(Number(req.params.amount))) {
@@ -60,7 +63,7 @@ UtxoRouter.get(
 
       //If we cant find a smaller utxo than amount requested, we can guarantee that the first utxo is the best one to use
       if (closestIndex === -1) {
-        res.json({ utxos: [addressUtxos[0]] });
+        res.json([addressUtxos[0]]);
         return;
       }
 
@@ -72,12 +75,12 @@ UtxoRouter.get(
       }
 
       if (endIndex > 0) {
-        res.json({ utxos: addressUtxos.slice(endIndex - 1, closestIndex) });
+        res.json(addressUtxos.slice(endIndex - 1, closestIndex));
         return;
       }
 
       if (endIndex === -1 && closestIndex !== addressUtxos.length - 1) {
-        res.json({ utxos: [addressUtxos[closestIndex + 1]] });
+        res.json([addressUtxos[closestIndex + 1]]);
         return;
       }
       res.json({ error: "No UTXOs found" });

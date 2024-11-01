@@ -5,15 +5,12 @@ import { pushTx } from "../blockchain";
 
 export const TransactionRouter = express.Router();
 
-TransactionRouter.get(
-  "/broadcast/:signedtxhex",
-  async (req: Request, res: Response) => {
-    try {
-      res.json(await pushTx(req.params.signedtxhex));
-    } catch (e) {
-      res.status(500).json({ error: "Internal server error" });
-    }
+TransactionRouter.post("/broadcast", async (req: Request, res: Response) => {
+  try {
+    res.json(await pushTx(req.body.signedtxhex));
+  } catch (e) {
+    res.status(500).json({ error: "Internal server error" });
   }
-);
+});
 
 export default TransactionRouter;
