@@ -7,7 +7,13 @@ Feelinglucky is an indexer that creates a queryable dataset for Luckycoin.
 A version of this indexer can be found at:
 https://feelinglucky.satsignal.io/
 
-## Error response
+## Installation (Ubuntu)
+
+to be added
+
+## RPC Docs
+
+### Error response
 
 All error responses will return a 200 status code with a JSON body containing the error message. You should
 check agains thtis by seeing if the error key is present in the response.
@@ -18,7 +24,7 @@ check agains thtis by seeing if the error key is present in the response.
 }
 ```
 
-## /block
+### /block
 
 #### GET /block/{blocknumber}
 
@@ -80,7 +86,7 @@ success respose: 200
 }
 ```
 
-## /transaction
+### /transaction
 
 #### POST /transaction/broadcast
 
@@ -96,7 +102,7 @@ success respose: 200
 }
 ```
 
-## /utxos
+### /utxos
 
 #### GET /utxos/all_by_address/{address}
 

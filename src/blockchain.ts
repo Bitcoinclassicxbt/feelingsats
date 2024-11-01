@@ -93,7 +93,6 @@ export const getBlock = async (
 
     return data as BlockData<FullTransaction>;
   } catch (e: unknown) {
-    console.dir(e);
     throw (
       "Error fetching block " +
       JSON.stringify((e as FullAPIError)?.response?.data ?? {})
