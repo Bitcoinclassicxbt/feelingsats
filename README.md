@@ -1,3 +1,7 @@
+
+![clover](https://github.com/user-attachments/assets/3ca7d1a4-cb76-4bd1-8a91-61441ca338c3)
+
+
 # FeelingLucky
 
 Feelinglucky is an indexer that creates a queryable dataset for Luckycoin.
