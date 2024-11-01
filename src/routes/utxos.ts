@@ -29,7 +29,7 @@ UtxoRouter.get(
     try {
       res.json(await fetchUtxosForAddress(req.params.address, req.models));
     } catch (e) {
-      res.status(500).json({ error: "Internal server error" });
+      res.json({ error: "Internal server error" });
     }
   }
 );
@@ -39,7 +39,7 @@ UtxoRouter.get(
   async (req: Request, res: Response) => {
     try {
       if (isNaN(Number(req.params.amount))) {
-        res.status(400).json({ error: "Invalid amount" });
+        res.json({ error: "Invalid amount" });
         return;
       }
 
@@ -86,7 +86,7 @@ UtxoRouter.get(
       res.json({ error: "No UTXOs found" });
     } catch (e) {
       console.log(e);
-      res.status(500).json({ error: "Internal server error" });
+      res.json({ error: "Internal server error" });
     }
   }
 );
