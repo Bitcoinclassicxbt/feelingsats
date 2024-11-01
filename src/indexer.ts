@@ -100,8 +100,6 @@ export const runIndexer = async () => {
       }
 
       if (blockargs.delete_utxos.length > 0) {
-        console.log("Deleting utxos!");
-        console.log(blockargs.delete_utxos);
         await models.Utxo.destroy({
           where: {
             [Op.or]: blockargs.delete_utxos.map((utxo) => ({
@@ -121,7 +119,7 @@ export const runIndexer = async () => {
       log("Waiting for new blocks...");
 
       // Wait for new blocks using sleep from ./utils
-      await sleep(60000); // Sleep for 60 seconds
+      await sleep(500); // Sleep for 60 seconds
     }
   }
 };
