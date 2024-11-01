@@ -9,7 +9,7 @@ export interface Models {
   sequelize: Sequelize;
 }
 
-export async function databaseConnection(): Promise<Models> {
+export async function databaseConnection(forceSync: boolean): Promise<Models> {
   const models = {} as Models;
 
   const sequelize = new Sequelize(
@@ -19,6 +19,8 @@ export async function databaseConnection(): Promise<Models> {
       dialect: "postgres",
       dialectOptions: {
         connectTimeout: 60000,
+        supportBigNumbers: true,
+        bigNumberStrings: false,
       },
     }
   );
@@ -31,10 +33,10 @@ export async function databaseConnection(): Promise<Models> {
 
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    await sequelize.sync({ force: forceSync });
     return models;
   } catch (e) {
-    log(e.toString(), "DatabaseError");
+    log((e as Error).toString(), "DatabaseError");
     log("Retrying database connection...", "Database");
     throw e;
   }

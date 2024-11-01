@@ -1,6 +1,6 @@
 import { getBlock } from "./blockchain";
-import { BlockData, UTXO, UTXODeleteKey } from "./types";
-import { databaseConnection, Models } from "./database/createConnection";
+import { BlockData, FullTransaction, UTXO, UTXODeleteKey } from "./types";
+import { databaseConnection, Models } from "./database";
 import { Op } from "sequelize";
 import { sleep, log } from "./utils";
 
@@ -29,7 +29,7 @@ const setLastProcessedBlock = async (models: Models, blockNum: number) => {
   });
 };
 
-const getNewUtxosFromBlock = (block: BlockData): UTXO[] => {
+const getNewUtxosFromBlock = (block: BlockData<FullTransaction>): UTXO[] => {
   const utxos: UTXO[] = [];
 
   for (const transaction of block.tx) {
@@ -39,7 +39,7 @@ const getNewUtxosFromBlock = (block: BlockData): UTXO[] => {
         vout: vout.n,
         address: vout.scriptPubKey?.addresses?.[0] ?? "",
         amount: BigInt(Math.round(vout.value * 1e8)),
-        hex: vout.scriptPubKey.hex,
+        hex: transaction.rawHex,
         block: block.height,
         block_hash: block.hash,
       });
@@ -49,7 +49,9 @@ const getNewUtxosFromBlock = (block: BlockData): UTXO[] => {
   return utxos;
 };
 
-const getUsedUtxosFromBlock = (block: BlockData): UTXODeleteKey[] => {
+const getUsedUtxosFromBlock = (
+  block: BlockData<FullTransaction>
+): UTXODeleteKey[] => {
   const utxos: UTXODeleteKey[] = [];
 
   for (const transaction of block.tx) {
@@ -74,7 +76,7 @@ type UpdateBlockArgs = {
 };
 
 const createBlockArgs = async (blockNum: number): Promise<UpdateBlockArgs> => {
-  const block: BlockData = await getBlock(blockNum);
+  const block: BlockData<FullTransaction> = await getBlock(blockNum);
 
   return {
     add_utxos: getNewUtxosFromBlock(block),
@@ -82,8 +84,7 @@ const createBlockArgs = async (blockNum: number): Promise<UpdateBlockArgs> => {
   };
 };
 
-export const runIndexer = async () => {
-  const models = await databaseConnection();
+export const runIndexer = async (models: Models) => {
   console.log("Connected!");
 
   // Retrieve the last processed block once
@@ -122,7 +123,9 @@ export const runIndexer = async () => {
       while (true) {
         await sleep(500); // Sleep for 60 seconds
         try {
-          const block: BlockData = await getBlock(currentBlockNum + 1);
+          const block: BlockData<FullTransaction> = await getBlock(
+            currentBlockNum + 1
+          );
           if (block) {
             break;
           }

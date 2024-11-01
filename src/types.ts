@@ -1,3 +1,17 @@
+export type FullAPIError = { response: { data: string } };
+export const isAPIError = (data: unknown): data is APIError => {
+  return (data as APIError)?.error !== undefined;
+};
+
+export type APIResponse<T> = { data: T | APIError };
+
+export type APIError = {
+  error: {
+    code: number;
+    message: string;
+  };
+};
+
 export type Setting = {
   key: string;
   value: string;
@@ -13,12 +27,14 @@ export type UTXO = {
   block_hash: string;
 };
 
+export type APIUTXO = Omit<UTXO, "amount"> & { amount: string };
+
 export type UTXODeleteKey = {
   txid: string;
   vout: number;
 };
 
-export type BlockData = {
+export type BlockData<T extends Transaction | FullTransaction> = {
   hash: string;
   confirmations: number;
   strippedsize: number;
@@ -28,7 +44,7 @@ export type BlockData = {
   version: number;
   versionHex: string;
   merkleroot: string;
-  tx: Transaction[];
+  tx: T[];
   time: number;
   mediantime: number;
   nonce: number;
@@ -52,6 +68,7 @@ export type Transaction = {
 export type Vin = {
   txid: string;
   vout: number;
+  scriptSig: ScriptSig;
   coinbase?: string;
   sequence: number;
 };
@@ -68,4 +85,13 @@ export type ScriptPubKey = {
   reqSigs?: number;
   type: string;
   addresses?: string[];
+};
+
+export type ScriptSig = {
+  asm: string;
+  hex: string;
+};
+
+export type FullTransaction = Transaction & {
+  rawHex: string;
 };

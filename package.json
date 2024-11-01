@@ -11,11 +11,14 @@
   "description": "",
   "dependencies": {
     "axios": "^1.7.7",
+    "bitcoinjs-lib": "^7.0.0-rc.0",
     "dotenv": "^16.4.5",
+    "express": "^4.21.1",
     "pg": "^8.13.1",
     "sequelize": "^6.37.5"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/sequelize": "^4.28.20"
   }
 }
