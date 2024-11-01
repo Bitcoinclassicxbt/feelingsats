@@ -31,6 +31,7 @@ const start = async () => {
   }
 
   const models = await databaseConnection(process.argv.includes("-new"));
+  log("Database connection established", "Database");
 
   if (process.argv.includes("-indexer")) {
     runIndexer(models);
