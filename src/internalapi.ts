@@ -5,7 +5,7 @@ import { promisify } from "util";
 import os from "os";
 import { Models } from "./database";
 
-const port = process.env.INTERNAL_API_PORT || 3001;
+const port = process.env.INTERNAL_API_PORT ?? 3001;
 const homeDir = os.homedir();
 const binaryPath = `${homeDir}/lky/luckycoin-cli`;
 
