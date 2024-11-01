@@ -46,7 +46,7 @@ export class UtxoModel
           allowNull: false,
         },
         hex: {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: true,
         },
         block: {
