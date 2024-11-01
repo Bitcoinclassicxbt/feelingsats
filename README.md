@@ -1,6 +1,4 @@
-
 ![clover](https://github.com/user-attachments/assets/3ca7d1a4-cb76-4bd1-8a91-61441ca338c3)
-
 
 # FeelingLucky
 
@@ -104,7 +102,7 @@ success respose: 200
 
 Get all UTXOs for a given address
 
-https://feelinglucky.satsignal.io/utxos/fetch_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy
+https://feelinglucky.satsignal.io/utxos/all_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy
 
 ```json
 [
