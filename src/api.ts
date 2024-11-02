@@ -2,10 +2,14 @@ import express, { Request, Response } from "express";
 import { Models } from "./database";
 import * as Routers from "./routes";
 import rateLimit from "express-rate-limit";
+import bodyParser from "body-parser";
+
 export const createApiServer = (models: Models) => {
   const app = express();
 
   const PORT = process.env.API_PORT || 3000;
+  app.use(bodyParser.json());
+
   app.use((req, res, next) => {
     req.models = models;
 
