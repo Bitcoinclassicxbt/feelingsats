@@ -14,22 +14,20 @@ export const LuckycoinNetwork = {
   scriptHash: 5,
   wif: 176,
 };
-export const TxJsonToHex = (tx: Transaction): string => {
+export const txJsonToHex = (tx: Transaction): string => {
   const transaction = new BitcoinJsTransaction();
 
-  // Set transaction version and locktime
   transaction.version = tx.version;
   transaction.locktime = tx.locktime;
 
-  // Add inputs
   tx.vin.forEach((input) => {
     if (input.coinbase) {
-      // Coinbase transaction input handling
+      // Coinbase transactions dont have txid
       transaction.addInput(
-        Buffer.alloc(32), // Empty previous txid for coinbase
-        0xffffffff, // Coinbase index
-        0xffffffff, // Sequence number for coinbase transactions
-        Buffer.from(input.coinbase, "hex") // Coinbase data as scriptSig
+        Buffer.alloc(32),
+        0xffffffff,
+        0xffffffff,
+        Buffer.from(input.coinbase, "hex")
       );
       return;
     }
@@ -37,25 +35,21 @@ export const TxJsonToHex = (tx: Transaction): string => {
     const txidBuffer = Buffer.from(input.txid, "hex").reverse();
     const scriptSigBuffer = Buffer.from(input.scriptSig.hex, "hex");
 
-    // Add the input without scriptSig first
     const vinIndex = transaction.addInput(
       txidBuffer,
       input.vout,
       input.sequence
     );
 
-    // Now set the scriptSig directly
     transaction.ins[vinIndex].script = scriptSigBuffer;
   });
 
-  // Add outputs
   tx.vout.forEach((output) => {
     const scriptPubKeyBuffer = Buffer.from(output.scriptPubKey.hex, "hex");
-    const valueSatoshis = Math.round(output.value * 1e8); // Convert BTC to satoshis
+    const valueSatoshis = Math.round(output.value * 1e8);
     transaction.addOutput(scriptPubKeyBuffer, BigInt(valueSatoshis));
   });
 
-  // Return raw transaction hex
   return transaction.toHex();
 };
 
@@ -84,11 +78,10 @@ export const getBlock = async (
         JSON.stringify((data as APIError)?.error ?? {})
       );
     }
-    //Data is not an error, so we can safely cast it to BlockData<Transaction>
 
     data.tx = data.tx.map((tx: Transaction) => ({
       ...tx,
-      rawHex: TxJsonToHex(tx),
+      rawHex: txJsonToHex(tx),
     }));
 
     return data as BlockData<FullTransaction>;

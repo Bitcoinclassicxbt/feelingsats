@@ -20,7 +20,6 @@ export const createApiServer = (models: Models) => {
     },
   });
 
-  // Conditionally apply the rate limiter middleware
   if (process.env.USE_RATE_LIMIT === "true") {
     app.use(limiter);
   }
