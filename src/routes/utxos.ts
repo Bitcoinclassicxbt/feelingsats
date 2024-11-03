@@ -62,6 +62,7 @@ UtxoRouter.get(
       );
 
       //If we cant find a smaller utxo than amount requested, we can guarantee that the first utxo is the best one to use
+
       if (closestIndex === -1) {
         res.json([addressUtxos[0]]);
         return;
@@ -74,12 +75,12 @@ UtxoRouter.get(
         endIndex--;
       }
 
-      if (endIndex > 0) {
-        res.json(addressUtxos.slice(endIndex - 1, closestIndex));
+      if (totalRecoupedValue >= BigInt(req.params.amount)) {
+        res.json(addressUtxos.slice(endIndex + 1, closestIndex + 1));
         return;
       }
 
-      if (endIndex === -1 && closestIndex !== addressUtxos.length - 1) {
+      if (addressUtxos[closestIndex + 1]) {
         res.json([addressUtxos[closestIndex + 1]]);
         return;
       }
