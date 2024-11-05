@@ -7,6 +7,18 @@ export const log = (message: string, type?: string) => {
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+export const checkEnvForFields = (required: string[], service: string) => {
+  if (required.some((field) => !process.env[field])) {
+    log(
+      `Missing required environment variables for ${service}, please define: \n ` +
+        required.join("\n "),
+      "error"
+    );
+    return false;
+  }
+  return true;
+};
+
 export const binarySearchForLowest = <
   T extends Record<string, string | number | bigint>
 >(

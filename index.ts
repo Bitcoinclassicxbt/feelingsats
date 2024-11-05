@@ -2,10 +2,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { runIndexer } from "./src/indexer";
+import { createRpcProxy } from "./src/rpcproxy";
 import { createApiServer } from "./src/api";
 import { createInternalApiServer } from "./src/internalapi";
 import { databaseConnection } from "./src/database";
-
+import { checkEnvForFields } from "./src/utils";
 import { log } from "./src/utils";
 
 const requiredEnvFields = [
@@ -21,12 +22,7 @@ const requiredEnvFields = [
 ];
 
 const start = async () => {
-  if (requiredEnvFields.some((field) => !process.env[field])) {
-    log(
-      "Missing required environment variables, please define: \n " +
-        requiredEnvFields.join("\n "),
-      "error"
-    );
+  if (!checkEnvForFields(requiredEnvFields, "main")) {
     return;
   }
 
@@ -35,6 +31,10 @@ const start = async () => {
 
   if (process.argv.includes("-indexer")) {
     runIndexer(models);
+  }
+
+  if (process.argv.includes("-rpcproxy")) {
+    createRpcProxy(models);
   }
 
   if (process.argv.includes("-internalapi")) {
