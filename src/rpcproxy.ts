@@ -35,7 +35,7 @@ export const createRpcProxy = (db: Models) => {
   const AUTH_HEADER = getAuthHeader(COOKIE_FILE_PATH);
   const NODE_RPC_URL = process.env.NODE_RPC_URL! || "http://127.0.0.1:19918";
 
-  app.post("/", async (req: Request, res: Response) => {
+  app.post("*", async (req: Request, res: Response) => {
     try {
       const response = await axios.post(NODE_RPC_URL, req.body, {
         headers: {
