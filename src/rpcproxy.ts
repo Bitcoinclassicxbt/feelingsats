@@ -1,119 +1,62 @@
-import net from "net";
+import express from "express";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { Request, Response } from "express";
+import { Models } from "./database";
 import { checkEnvForFields } from "./utils";
+const app = express();
+app.use(express.json());
 
+// Function to read and encode the cookie file
+function getAuthHeader(cookieFilePath: string): string {
+  try {
+    const cookie = fs.readFileSync(cookieFilePath, "utf-8").trim();
+    return `Basic ${btoa(cookie)}`;
+  } catch (error) {
+    console.error("Error reading the cookie file:", error);
+    process.exit(1);
+  }
+}
 const requiredEnvFields = [
   "NODE_RPC_URL",
   "NODE_RPC_COOKIE_PATH",
   "PROXY_PORT",
 ];
-
-export const createRpcProxy = () => {
+export const createRpcProxy = (db: Models) => {
   if (!checkEnvForFields(requiredEnvFields, "rpcproxy")) {
     return;
   }
 
+  //checkEnvForFields verifies NODE_RPC_COOKIE_PATH is defined
   const COOKIE_FILE_PATH = path.resolve(
     process.env.NODE_RPC_COOKIE_PATH! || "/root/.luckycoin/.cookie"
   );
-  const cookie = fs.readFileSync(COOKIE_FILE_PATH, "utf-8").trim();
-  const AUTH_HEADER = `Basic ${Buffer.from(cookie).toString("base64")}`;
+  const AUTH_HEADER = getAuthHeader(COOKIE_FILE_PATH);
   const NODE_RPC_URL = process.env.NODE_RPC_URL! || "http://127.0.0.1:19918";
-  const PORT = parseInt(process.env.PROXY_PORT || "9920", 10);
 
-  const server = net.createServer((socket) => {
-    let requestData = "";
-
-    socket.on("data", (chunk) => {
-      requestData += chunk.toString();
-
-      // Check if we have received all the data
-      const headersEndIndex = requestData.indexOf("\n\n");
-      if (headersEndIndex !== -1) {
-        const headersPart = requestData.substring(0, headersEndIndex);
-        const bodyPart = requestData.substring(headersEndIndex + 2);
-
-        // Parse Content-Length to ensure we've received the full body
-        const contentLengthMatch = headersPart.match(/Content-Length: (\d+)/i);
-        if (contentLengthMatch) {
-          const contentLength = parseInt(contentLengthMatch[1], 10);
-          if (bodyPart.length >= contentLength) {
-            // We have received the full request
-            handleRequest(socket, headersPart, bodyPart);
-          }
-        }
+  app.post("*", async (req: Request, res: Response) => {
+    try {
+      const response = await axios.post(NODE_RPC_URL, req.body, {
+        headers: {
+          Authorization: AUTH_HEADER,
+          "Content-Type": "text/plain",
+        },
+      });
+      res.status(response.status).json(response.data);
+    } catch (error) {
+      console.log(error);
+      if (axios.isAxiosError(error) && error.response) {
+        res.status(error.response.status).json(error.response.data);
+      } else {
+        res.status(500).json({ error: "Proxy server error" });
       }
-    });
-
-    socket.on("error", (err) => {
-      console.error("Socket error:", err);
-      socket.destroy();
-    });
+    }
   });
 
-  server.listen(PORT, () => {
+  const PORT = process.env.PROXY_PORT || 9920;
+  app.listen(PORT, () => {
     console.log(`Proxy server running on port ${PORT}`);
     console.log(`Using cookie file at: ${COOKIE_FILE_PATH}`);
   });
-
-  async function handleRequest(
-    socket: net.Socket,
-    headersPart: string,
-    bodyPart: string
-  ) {
-    try {
-      // Parse the request line and headers
-      const headersLines = headersPart.split("\n");
-      const requestLine = headersLines.shift()!;
-      const [method, path, httpVersion] = requestLine.split(" ");
-      const headers: { [key: string]: string } = {};
-      for (const line of headersLines) {
-        const [key, value] = line.split(": ");
-        if (key && value) {
-          headers[key.toLowerCase()] = value.trim();
-        }
-      }
-
-      // Get the Authorization header
-      const authHeader = headers["authorization"];
-
-      // Verify the Authorization header
-      if (!authHeader || authHeader !== AUTH_HEADER) {
-        const responseMessage = "HTTP/1.1 401 Unauthorized\n\n";
-        socket.write(responseMessage);
-        socket.end();
-        return;
-      }
-
-      // Forward the request to the Bitcoin node
-      const response = await axios.post(NODE_RPC_URL, bodyPart, {
-        headers: {
-          Authorization: AUTH_HEADER,
-          "Content-Type": "application/json",
-        },
-      });
-
-      // Prepare the response to send back
-      const responseBody = JSON.stringify(response.data);
-      const responseMessage = `HTTP/1.1 200 OK\nContent-Length: ${responseBody.length}\n\n${responseBody}`;
-
-      socket.write(responseMessage);
-      socket.end();
-    } catch (error) {
-      console.error("Error handling request:", error);
-      let statusLine = "HTTP/1.1 500 Internal Server Error";
-      let responseBody = JSON.stringify({ error: "Proxy server error" });
-
-      if (axios.isAxiosError(error) && error.response) {
-        statusLine = `HTTP/1.1 ${error.response.status} ${error.response.statusText}`;
-        responseBody = JSON.stringify(error.response.data);
-      }
-
-      const responseMessage = `${statusLine}\nContent-Length: ${responseBody.length}\n\n${responseBody}`;
-      socket.write(responseMessage);
-      socket.end();
-    }
-  }
 };
