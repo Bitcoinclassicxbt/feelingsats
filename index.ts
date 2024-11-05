@@ -34,7 +34,7 @@ const start = async () => {
   }
 
   if (process.argv.includes("-rpcproxy")) {
-    createRpcProxy(models);
+    createRpcProxy();
   }
 
   if (process.argv.includes("-internalapi")) {
