@@ -6,6 +6,7 @@ import { Models } from "./database";
 import { checkEnvForFields } from "./utils";
 import net from "net";
 import { URL } from "url";
+import axios, { AxiosError } from "axios";
 
 const requiredEnvFields = [
   "NODE_RPC_URL",
@@ -36,13 +37,6 @@ export const createRpcProxy = (db: Models) => {
 
   const AUTH_HEADER = getAuthHeader(COOKIE_FILE_PATH);
   const NODE_RPC_URL = process.env.NODE_RPC_URL! || "http://127.0.0.1:19918";
-
-  // Parse the NODE_RPC_URL to extract host and port
-  const parsedUrl = new URL(NODE_RPC_URL);
-  const targetHost = parsedUrl.hostname;
-  const targetPort =
-    parseInt(parsedUrl.port, 10) ||
-    (parsedUrl.protocol === "https:" ? 443 : 80);
 
   // Create an HTTP proxy server
   const proxy = httpProxy.createProxyServer({
@@ -89,48 +83,43 @@ export const createRpcProxy = (db: Models) => {
     let dataBuffer = "";
 
     clientSocket.on("data", (chunk) => {
-      console.log("new connection");
       dataBuffer += chunk.toString();
+    });
 
-      // Detect end of HTTP headers
-      const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
-      if (headerEndIndex !== -1) {
-        return;
-      }
+    clientSocket.on("end", async () => {
+      // The client has finished sending data
       // Extract the body of the request
-      const bodyPart = dataBuffer.substring(headerEndIndex + 4);
+      const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
+      let bodyPart = "";
 
-      // Prepare options for the HTTP request to the RPC server
-      const options = {
-        hostname: targetHost,
-        port: targetPort,
-        path: "/",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(bodyPart),
-          Authorization: AUTH_HEADER,
-        },
-      };
-      console.log("options");
+      if (headerEndIndex !== -1) {
+        bodyPart = dataBuffer.substring(headerEndIndex + 4);
+      } else {
+        // No headers found, assume entire data is body
+        bodyPart = dataBuffer;
+      }
 
-      // Send the request to the RPC server
-      const req = http.request(options, (res) => {
-        // Pipe the RPC server response back to the TCP client
-        res.pipe(clientSocket);
-      });
+      // Send the request to the RPC server using axios
+      try {
+        const response = await axios.post(NODE_RPC_URL, bodyPart, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: AUTH_HEADER,
+          },
+          responseType: "arraybuffer", // Ensure we get raw data
+        });
 
-      req.on("error", (e) => {
-        console.error(`Problem with request: ${e.message}`);
+        // Send the response back to the TCP client
+        clientSocket.write(response.data);
+        clientSocket.end();
+      } catch (error) {
+        console.error(
+          `Error making request to RPC server: ${
+            (error as AxiosError)?.message
+          }`
+        );
         clientSocket.destroy();
-      });
-
-      // Send the body and end the request
-      console.log(bodyPart);
-      req.end(bodyPart);
-
-      // Clear the buffer
-      dataBuffer = "";
+      }
     });
 
     clientSocket.on("error", (err) => {
