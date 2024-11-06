@@ -44,7 +44,7 @@ export const createRpcProxy = (db: Models) => {
     parseInt(parsedUrl.port, 10) ||
     (parsedUrl.protocol === "https:" ? 443 : 80);
 
-  // Create a proxy server
+  // Create an HTTP proxy server
   const proxy = httpProxy.createProxyServer({
     target: NODE_RPC_URL,
     changeOrigin: true,
@@ -60,16 +60,10 @@ export const createRpcProxy = (db: Models) => {
   proxy.on("error", (err, req, res) => {
     console.error("Proxy error:", err);
 
-    // Check if res is a ServerResponse and not a Socket
-    if (res instanceof http.ServerResponse) {
-      if (!res.headersSent) {
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "text/plain");
-        res.end("Proxy server error");
-      }
-    } else if (res instanceof net.Socket) {
-      // Handle socket-specific error response if necessary
-      res.end();
+    if (res instanceof http.ServerResponse && !res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "text/plain");
+      res.end("Proxy server error");
     }
   });
 
@@ -83,92 +77,81 @@ export const createRpcProxy = (db: Models) => {
     proxy.ws(req, socket, head);
   });
 
-  const PORT = process.env.HTTP_PROXY_PORT || 9920;
-  server.listen(PORT, () => {
-    console.log(`HTTP proxy server running on port ${PORT}`);
+  const HTTP_PORT = process.env.HTTP_PROXY_PORT || 9922;
+  server.listen(HTTP_PORT, () => {
+    console.log(`HTTP proxy server running on port ${HTTP_PORT}`);
     console.log(`Using cookie file at: ${COOKIE_FILE_PATH}`);
   });
 
   // Create a TCP server for TCP connections
-  const TCP_PORT = process.env.TCP_PROXY_PORT || 9921;
+  const TCP_PORT = process.env.TCP_PROXY_PORT || 9923;
   const tcpServer = net.createServer((clientSocket) => {
-    let buffer = "";
-    let headersParsed = false;
+    let dataBuffer = "";
 
     clientSocket.on("data", (chunk) => {
-      buffer += chunk.toString();
+      console.log("New connection on tcp");
+      dataBuffer += chunk.toString();
 
-      if (!headersParsed) {
-        // Check if we've received the end of the HTTP headers
-        const headerEndIndex = buffer.indexOf("\r\n\r\n");
-        if (headerEndIndex !== -1) {
-          headersParsed = true;
+      // Detect end of HTTP headers (simplified for this example)
+      const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
+      if (headerEndIndex !== -1) {
+        // Split headers and body
+        const headersPart = dataBuffer.substring(0, headerEndIndex);
+        const bodyPart = dataBuffer.substring(headerEndIndex + 4);
 
-          // Extract headers and body
-          const headersPart = buffer.substring(0, headerEndIndex);
-          const bodyPart = buffer.substring(headerEndIndex + 4); // Skip past \r\n\r\n
-
-          // Split headers into lines
-          const headersLines = headersPart.split(/\r\n/);
-
-          // Parse the request line
-          const requestLine = headersLines.shift();
-          if (!requestLine) {
-            console.error("Invalid HTTP request: missing request line");
-            clientSocket.destroy();
-            return;
+        // Extract Content-Length
+        const headersLines = headersPart.split("\r\n");
+        let contentLength = 0;
+        headersLines.forEach((line) => {
+          if (/^Content-Length:/i.test(line)) {
+            contentLength = parseInt(line.split(":")[1].trim(), 10);
           }
+        });
 
-          // Parse headers into an object
-          const headerObj: { [key: string]: string } = {};
-          headersLines.forEach((line) => {
-            const index = line.indexOf(":");
-            if (index !== -1) {
-              const key = line.substring(0, index).trim();
-              const value = line.substring(index + 1).trim();
-              headerObj[key] = value;
-            }
+        // Prepare options for the HTTP request to the RPC server
+        const options = {
+          hostname: targetHost,
+          port: targetPort,
+          path: "/",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(bodyPart),
+            Authorization: AUTH_HEADER,
+          },
+        };
+
+        // Send the request to the RPC server
+        const req = http.request(options, (res) => {
+          let responseData = "";
+
+          res.on("data", (chunk) => {
+            responseData += chunk;
           });
 
-          // Replace the Authorization header
-          headerObj["Authorization"] = AUTH_HEADER;
-
-          // Reconstruct the headers
-          const modifiedHeaders = [requestLine];
-          for (const key in headerObj) {
-            modifiedHeaders.push(`${key}: ${headerObj[key]}`);
-          }
-
-          const modifiedRequest =
-            modifiedHeaders.join("\r\n") + "\r\n\r\n" + bodyPart;
-
-          // Connect to target server
-          const targetSocket = net.connect(
-            {
-              host: targetHost,
-              port: targetPort,
-            },
-            () => {
-              // Send the modified request to the target server
-              targetSocket.write(modifiedRequest);
-
-              // Pipe remaining data
-              clientSocket.pipe(targetSocket);
-              targetSocket.pipe(clientSocket);
-            }
-          );
-
-          targetSocket.on("error", (err) => {
-            console.error("Target socket error:", err);
-            clientSocket.destroy();
+          res.on("end", () => {
+            // Send the response back to the TCP client
+            clientSocket.write(responseData);
+            clientSocket.end();
           });
+        });
 
-          clientSocket.on("error", (err) => {
-            console.error("Client socket error:", err);
-            targetSocket.destroy();
-          });
-        }
+        req.on("error", (e) => {
+          console.error(`Problem with request: ${e.message}`);
+          clientSocket.destroy();
+        });
+
+        // Write the body to the request
+        req.write(bodyPart);
+        req.end();
+
+        // Clear the buffer
+        dataBuffer = "";
       }
+    });
+
+    clientSocket.on("error", (err) => {
+      console.error("Client socket error:", err);
     });
   });
 
