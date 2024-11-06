@@ -84,9 +84,11 @@ export const createRpcProxy = (db: Models) => {
 
     clientSocket.on("data", (chunk) => {
       dataBuffer += chunk.toString();
+      console.log(dataBuffer);
     });
 
     clientSocket.on("end", async () => {
+      console.log("endtcp");
       // The client has finished sending data
       // Extract the body of the request
       const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
