@@ -10,7 +10,8 @@ import { URL } from "url";
 const requiredEnvFields = [
   "NODE_RPC_URL",
   "NODE_RPC_COOKIE_PATH",
-  "PROXY_PORT",
+  "HTTP_PROXY_PORT",
+  "TCP_PROXY_PORT",
 ];
 
 export const createRpcProxy = (db: Models) => {
@@ -82,7 +83,7 @@ export const createRpcProxy = (db: Models) => {
     proxy.ws(req, socket, head);
   });
 
-  const PORT = process.env.PROXY_PORT || 9920;
+  const PORT = process.env.HTTP_PROXY_PORT || 9920;
   server.listen(PORT, () => {
     console.log(`HTTP proxy server running on port ${PORT}`);
     console.log(`Using cookie file at: ${COOKIE_FILE_PATH}`);
