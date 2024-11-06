@@ -81,55 +81,76 @@ export const createRpcProxy = (db: Models) => {
   const TCP_PORT = process.env.TCP_PROXY_PORT || 9923;
   const tcpServer = net.createServer((clientSocket) => {
     let dataBuffer = "";
+    let headersParsed = false;
+    let contentLength = 0;
+    let bodyBuffer = "";
 
-    clientSocket.on("data", (chunk) => {
+    clientSocket.on("data", async (chunk) => {
       dataBuffer += chunk.toString();
-      console.log(dataBuffer);
-    });
 
-    clientSocket.on("end", async () => {
-      console.log("endtcp");
-      // The client has finished sending data
-      // Extract the body of the request
-      const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
-      let bodyPart = "";
+      if (!headersParsed) {
+        // Detect end of HTTP headers
+        const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
+        if (headerEndIndex !== -1) {
+          headersParsed = true;
+          // Extract headers and body
+          const headersPart = dataBuffer.substring(0, headerEndIndex);
+          const bodyPart = dataBuffer.substring(headerEndIndex + 4);
 
-      if (headerEndIndex !== -1) {
-        bodyPart = dataBuffer.substring(headerEndIndex + 4);
+          // Parse headers
+          const headersLines = headersPart.split("\r\n");
+          headersLines.shift(); // Remove the request line (e.g., POST / HTTP/1.1)
+
+          headersLines.forEach((line) => {
+            const [key, value] = line.split(":");
+            if (key && /^Content-Length$/i.test(key.trim())) {
+              contentLength = parseInt(value.trim(), 10);
+            }
+          });
+
+          bodyBuffer += bodyPart;
+
+          // Check if we have received the full body
+          if (bodyBuffer.length >= contentLength) {
+            await handleRequest(bodyBuffer, clientSocket);
+          }
+        }
       } else {
-        // No headers found, assume entire data is body
-        bodyPart = dataBuffer;
-      }
+        // Headers have been parsed, collect body data
+        bodyBuffer += chunk.toString();
 
-      // Send the request to the RPC server using axios
-      try {
-        console.log("posting -> ");
-        console.log(bodyPart);
-        const response = await axios.post(NODE_RPC_URL, bodyPart, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: AUTH_HEADER,
-          },
-          responseType: "arraybuffer", // Ensure we get raw data
-        });
-        console.log(response.data);
-
-        // Send the response back to the TCP client
-        clientSocket.write(response.data);
-        clientSocket.end();
-      } catch (error) {
-        console.error(
-          `Error making request to RPC server: ${
-            (error as AxiosError)?.message
-          }`
-        );
-        clientSocket.destroy();
+        // Check if we have received the full body
+        if (bodyBuffer.length >= contentLength) {
+          await handleRequest(bodyBuffer, clientSocket);
+        }
       }
     });
 
     clientSocket.on("error", (err) => {
       console.error("Client socket error:", err);
     });
+
+    async function handleRequest(body: string, socket: net.Socket) {
+      try {
+        // Send the request to the RPC server using axios
+        const response = await axios.post(NODE_RPC_URL, body, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: AUTH_HEADER,
+          },
+          responseType: "arraybuffer", // Ensure we get raw data
+        });
+
+        // Send the response back to the TCP client
+        socket.write(response.data);
+        socket.end();
+      } catch (error) {
+        console.error(
+          `Error making request to RPC server: ${(error as AxiosError).message}`
+        );
+        socket.destroy();
+      }
+    }
   });
 
   tcpServer.listen(TCP_PORT, () => {
