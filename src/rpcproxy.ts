@@ -5,10 +5,13 @@ import path from "path";
 import { Models } from "./database";
 import { checkEnvForFields } from "./utils";
 import net from "net";
+import { URL } from "url";
+
 const requiredEnvFields = [
   "NODE_RPC_URL",
   "NODE_RPC_COOKIE_PATH",
-  "PROXY_PORT",
+  "HTTP_PROXY_PORT",
+  "TCP_PROXY_PORT",
 ];
 
 export const createRpcProxy = (db: Models) => {
@@ -33,6 +36,13 @@ export const createRpcProxy = (db: Models) => {
 
   const AUTH_HEADER = getAuthHeader(COOKIE_FILE_PATH);
   const NODE_RPC_URL = process.env.NODE_RPC_URL! || "http://127.0.0.1:19918";
+
+  // Parse the NODE_RPC_URL to extract host and port
+  const parsedUrl = new URL(NODE_RPC_URL);
+  const targetHost = parsedUrl.hostname;
+  const targetPort =
+    parseInt(parsedUrl.port, 10) ||
+    (parsedUrl.protocol === "https:" ? 443 : 80);
 
   // Create a proxy server
   const proxy = httpProxy.createProxyServer({
@@ -75,7 +85,42 @@ export const createRpcProxy = (db: Models) => {
 
   const PORT = process.env.PROXY_PORT || 9920;
   server.listen(PORT, () => {
-    console.log(`Proxy server running on port ${PORT}`);
+    console.log(`HTTP proxy server running on port ${PORT}`);
     console.log(`Using cookie file at: ${COOKIE_FILE_PATH}`);
+  });
+
+  // Create a TCP server for TCP connections
+  const TCP_PORT = process.env.TCP_PROXY_PORT || 9921;
+  const tcpServer = net.createServer((clientSocket) => {
+    // When a client connects, create a connection to the target server
+    const targetSocket = net.connect(
+      {
+        host: targetHost,
+        port: targetPort,
+      },
+      () => {
+        console.log(
+          `TCP connection established to ${targetHost}:${targetPort}`
+        );
+      }
+    );
+
+    // Pipe data between client and target
+    clientSocket.pipe(targetSocket);
+    targetSocket.pipe(clientSocket);
+
+    // Handle errors
+    clientSocket.on("error", (err) => {
+      console.error("Client socket error:", err);
+    });
+
+    targetSocket.on("error", (err) => {
+      console.error("Target socket error:", err);
+      clientSocket.destroy();
+    });
+  });
+
+  tcpServer.listen(TCP_PORT, () => {
+    console.log(`TCP proxy server running on port ${TCP_PORT}`);
   });
 };
