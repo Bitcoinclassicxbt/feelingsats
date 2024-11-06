@@ -101,6 +101,8 @@ export const createRpcProxy = (db: Models) => {
 
       // Send the request to the RPC server using axios
       try {
+        console.log("posting -> ");
+        console.log(bodyPart);
         const response = await axios.post(NODE_RPC_URL, bodyPart, {
           headers: {
             "Content-Type": "application/json",
@@ -108,6 +110,7 @@ export const createRpcProxy = (db: Models) => {
           },
           responseType: "arraybuffer", // Ensure we get raw data
         });
+        console.log(response.data);
 
         // Send the response back to the TCP client
         clientSocket.write(response.data);
