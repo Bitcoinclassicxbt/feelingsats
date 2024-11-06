@@ -94,60 +94,67 @@ export const createRpcProxy = (db: Models) => {
 
       // Detect end of HTTP headers (simplified for this example)
       const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
+
+      console.log(headerEndIndex);
+      console.log(dataBuffer);
       if (headerEndIndex !== -1) {
-        // Split headers and body
-        const headersPart = dataBuffer.substring(0, headerEndIndex);
-        const bodyPart = dataBuffer.substring(headerEndIndex + 4);
-
-        // Extract Content-Length
-        const headersLines = headersPart.split("\r\n");
-        let contentLength = 0;
-        headersLines.forEach((line) => {
-          if (/^Content-Length:/i.test(line)) {
-            contentLength = parseInt(line.split(":")[1].trim(), 10);
-          }
-        });
-
-        // Prepare options for the HTTP request to the RPC server
-        const options = {
-          hostname: targetHost,
-          port: targetPort,
-          path: "/",
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Content-Length": Buffer.byteLength(bodyPart),
-            Authorization: AUTH_HEADER,
-          },
-        };
-
-        // Send the request to the RPC server
-        const req = http.request(options, (res) => {
-          let responseData = "";
-
-          res.on("data", (chunk) => {
-            responseData += chunk;
-          });
-
-          res.on("end", () => {
-            // Send the response back to the TCP client
-            clientSocket.write(responseData);
-            clientSocket.end();
-          });
-        });
-
-        req.on("error", (e) => {
-          console.error(`Problem with request: ${e.message}`);
-          clientSocket.destroy();
-        });
-
-        // Write the body to the request
-        req.write(bodyPart);
-        req.end();
-
-        // Clear the buffer
-        dataBuffer = "";
+        return;
       }
+      // Split headers and body
+      const headersPart = dataBuffer.substring(0, headerEndIndex);
+      const bodyPart = dataBuffer.substring(headerEndIndex + 4);
+
+      // Extract Content-Length
+      const headersLines = headersPart.split("\r\n");
+      let contentLength = 0;
+      headersLines.forEach((line) => {
+        if (/^Content-Length:/i.test(line)) {
+          contentLength = parseInt(line.split(":")[1].trim(), 10);
+        }
+      });
+
+      // Prepare options for the HTTP request to the RPC server
+      const options = {
+        hostname: targetHost,
+        port: targetPort,
+        path: "/",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(bodyPart),
+          Authorization: AUTH_HEADER,
+        },
+      };
+
+      console.dir(options);
+
+      // Send the request to the RPC server
+      const req = http.request(options, (res) => {
+        let responseData = "";
+
+        res.on("data", (chunk) => {
+          responseData += chunk;
+        });
+
+        res.on("end", () => {
+          console.log(responseData);
+          // Send the response back to the TCP client
+          clientSocket.write(responseData);
+          clientSocket.end();
+        });
+      });
+
+      req.on("error", (e) => {
+        console.error(`Problem with request: ${e.message}`);
+        clientSocket.destroy();
+      });
+
+      // Write the body to the request
+      req.write(bodyPart);
+      req.end();
+
+      // Clear the buffer
+      dataBuffer = "";
     });
 
     clientSocket.on("error", (err) => {
