@@ -37,12 +37,19 @@ export const createRpcProxy = (db: Models) => {
 
   app.post("*", async (req: Request, res: Response) => {
     try {
+      console.log(req.body);
+      console.log(req.headers);
+
       const response = await axios.post(NODE_RPC_URL, req.body, {
         headers: {
           Authorization: AUTH_HEADER,
           "Content-Type": "text/plain",
         },
       });
+
+      console.log("debug!!!");
+      console.log(response.data);
+      console.log(response.status);
       res.status(response.status).json(response.data);
     } catch (error) {
       console.log(error);
