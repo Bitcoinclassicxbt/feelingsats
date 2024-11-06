@@ -52,7 +52,7 @@ export const createRpcProxy = (db: Models) => {
   });
 
   // Intercept the proxy request to modify headers
-  proxy.on("proxyReq", (proxyReq, req, res, options) => {
+  proxy.on("proxyReq", (proxyReq, req, res) => {
     // Replace the Authorization header
     proxyReq.setHeader("Authorization", AUTH_HEADER);
   });
@@ -89,29 +89,16 @@ export const createRpcProxy = (db: Models) => {
     let dataBuffer = "";
 
     clientSocket.on("data", (chunk) => {
-      console.log("New connection on tcp");
+      console.log("new connection");
       dataBuffer += chunk.toString();
 
-      // Detect end of HTTP headers (simplified for this example)
+      // Detect end of HTTP headers
       const headerEndIndex = dataBuffer.indexOf("\r\n\r\n");
-
-      console.log(headerEndIndex);
-      console.log(dataBuffer);
       if (headerEndIndex !== -1) {
         return;
       }
-      // Split headers and body
-      const headersPart = dataBuffer.substring(0, headerEndIndex);
+      // Extract the body of the request
       const bodyPart = dataBuffer.substring(headerEndIndex + 4);
-
-      // Extract Content-Length
-      const headersLines = headersPart.split("\r\n");
-      let contentLength = 0;
-      headersLines.forEach((line) => {
-        if (/^Content-Length:/i.test(line)) {
-          contentLength = parseInt(line.split(":")[1].trim(), 10);
-        }
-      });
 
       // Prepare options for the HTTP request to the RPC server
       const options = {
@@ -125,23 +112,12 @@ export const createRpcProxy = (db: Models) => {
           Authorization: AUTH_HEADER,
         },
       };
-
-      console.dir(options);
+      console.log("options");
 
       // Send the request to the RPC server
       const req = http.request(options, (res) => {
-        let responseData = "";
-
-        res.on("data", (chunk) => {
-          responseData += chunk;
-        });
-
-        res.on("end", () => {
-          console.log(responseData);
-          // Send the response back to the TCP client
-          clientSocket.write(responseData);
-          clientSocket.end();
-        });
+        // Pipe the RPC server response back to the TCP client
+        res.pipe(clientSocket);
       });
 
       req.on("error", (e) => {
@@ -149,9 +125,9 @@ export const createRpcProxy = (db: Models) => {
         clientSocket.destroy();
       });
 
-      // Write the body to the request
-      req.write(bodyPart);
-      req.end();
+      // Send the body and end the request
+      console.log(bodyPart);
+      req.end(bodyPart);
 
       // Clear the buffer
       dataBuffer = "";
