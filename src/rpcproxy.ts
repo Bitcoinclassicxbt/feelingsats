@@ -83,14 +83,14 @@ export const createRpcProxy = (db: Models) => {
     proxy.ws(req, socket, head);
   });
 
-  const PORT = process.env.PROXY_PORT || 9920;
+  const PORT = process.env.HTTP_PROXY_PORT || 9922;
   server.listen(PORT, () => {
     console.log(`HTTP proxy server running on port ${PORT}`);
     console.log(`Using cookie file at: ${COOKIE_FILE_PATH}`);
   });
 
   // Create a TCP server for TCP connections
-  const TCP_PORT = process.env.TCP_PROXY_PORT || 9921;
+  const TCP_PORT = process.env.TCP_PROXY_PORT || 9923;
   const tcpServer = net.createServer((clientSocket) => {
     // When a client connects, create a connection to the target server
     const targetSocket = net.connect(
