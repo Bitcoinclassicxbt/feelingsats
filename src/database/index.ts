@@ -1,11 +1,13 @@
 import { Sequelize } from "sequelize";
 import { log } from "../utils";
-import { UtxoModel } from "./models/Utxo";
 import { SettingModel } from "./models/Setting";
+import { TransactionModel } from "./models/Transaction";
+import { UtxoModel } from "./models/Utxo";
 
 export interface Models {
   Utxo: typeof UtxoModel;
   Setting: typeof SettingModel;
+  Transaction: typeof TransactionModel;
   sequelize: Sequelize;
 }
 
@@ -27,6 +29,7 @@ export async function databaseConnection(forceSync: boolean): Promise<Models> {
 
   models.Utxo = UtxoModel.initialize(sequelize);
   models.Setting = SettingModel.initialize(sequelize);
+  models.Transaction = TransactionModel.initialize(sequelize);
   models.sequelize = sequelize;
 
   log("Connecting to database...", "Database");

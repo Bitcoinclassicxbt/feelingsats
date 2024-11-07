@@ -1,8 +1,8 @@
+import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { Models } from "./database";
 import * as Routers from "./routes";
-import rateLimit from "express-rate-limit";
-import bodyParser from "body-parser";
 
 export const createApiServer = (models: Models) => {
   const app = express();
@@ -29,9 +29,9 @@ export const createApiServer = (models: Models) => {
   }
 
   //Define routers
-  app.use("/utxos", Routers.UtxoRouter);
   app.use("/block", Routers.BlockRouter);
   app.use("/transaction", Routers.TransactionRouter);
+  app.use("/address", Routers.AddressRouter);
 
   app.get("/", (request: Request, response: Response) => {
     response.status(200).send("Hello World");

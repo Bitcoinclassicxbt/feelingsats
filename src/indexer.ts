@@ -1,8 +1,14 @@
-import { getBlock } from "./blockchain";
-import { BlockData, FullTransaction, UTXO, UTXODeleteKey } from "./types";
-import { databaseConnection, Models } from "./database";
 import { Op } from "sequelize";
-import { sleep, log } from "./utils";
+import { getBlock } from "./blockchain";
+import { Models } from "./database";
+import {
+  BlockData,
+  FullTransaction,
+  Transaction,
+  UTXO,
+  UTXODeleteKey,
+} from "./types";
+import { log, sleep } from "./utils";
 
 const getLastProcessedBlock = async (models: Models) => {
   const { Setting } = models;
@@ -38,7 +44,7 @@ const getNewUtxosFromBlock = (block: BlockData<FullTransaction>): UTXO[] => {
         txid: transaction.txid,
         vout: vout.n,
         address: vout.scriptPubKey?.addresses?.[0] ?? "",
-        amount: BigInt(Math.round(vout.value * 1e8)),
+        amount: Math.round(vout.value * 1e8).toString(),
         hex: transaction.rawHex,
         block: block.height,
         block_hash: block.hash,
@@ -70,7 +76,41 @@ const getUsedUtxosFromBlock = (
   return utxos;
 };
 
+const getTransactionsFromBlock = (block: BlockData<FullTransaction>) => {
+  const transactions = block.tx.map((tx) => {
+    return {
+      txid: tx.txid,
+      hash: tx.hash,
+      size: tx.size,
+      locktime: tx.locktime,
+      version: tx.version,
+      vsize: tx.vsize,
+      vin: tx.vin.map((input) => {
+        return {
+          txid: input.txid,
+          vout: input.vout,
+          scriptSig: input.scriptSig,
+          coinbase: input.coinbase,
+          sequence: input.sequence,
+        };
+      }),
+      vout: tx.vout.map((output) => {
+        if (!output.scriptPubKey.addresses) return;
+
+        return {
+          scriptPubKey: output.scriptPubKey,
+          n: output.n,
+          value: output.value,
+        };
+      }),
+    };
+  }) as Transaction[];
+
+  return transactions;
+};
+
 type UpdateBlockArgs = {
+  transactions: Transaction[];
   add_utxos: UTXO[];
   delete_utxos: UTXODeleteKey[];
 };
@@ -79,6 +119,7 @@ const createBlockArgs = async (blockNum: number): Promise<UpdateBlockArgs> => {
   const block: BlockData<FullTransaction> = await getBlock(blockNum);
 
   return {
+    transactions: getTransactionsFromBlock(block),
     add_utxos: getNewUtxosFromBlock(block),
     delete_utxos: getUsedUtxosFromBlock(block),
   };
@@ -109,6 +150,10 @@ export const runIndexer = async (models: Models) => {
             })),
           },
         });
+      }
+
+      if (blockargs.transactions.length > 0) {
+        await models.Transaction.bulkCreate(blockargs.transactions);
       }
 
       await setLastProcessedBlock(models, currentBlockNum);

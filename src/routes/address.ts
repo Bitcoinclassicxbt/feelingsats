@@ -1,11 +1,10 @@
 import express, { Request, Response } from "express";
-import { UTXO } from "../types";
+import { Op } from "sequelize";
 import { Models } from "../database";
+import { UTXO } from "../types";
 import { binarySearchForLowest } from "../utils";
 
-export const UtxoRouter = express.Router();
-
-// Example route handlers
+export const AddressRouter = express.Router();
 
 const fetchUtxosForAddress = async (
   address: string,
@@ -23,19 +22,62 @@ const fetchUtxosForAddress = async (
   });
 };
 
-UtxoRouter.get(
-  "/all_by_address/:address",
+AddressRouter.get("/:address/balance", async (req: Request, res: Response) => {
+  try {
+    const address = req.params.address;
+
+    const utxos = await fetchUtxosForAddress(address, req.models);
+
+    const balance = utxos.reduce((acc, utxo) => acc + Number(utxo.amount), 0);
+
+    res.json({ balance: balance / 1e8 });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+AddressRouter.get(
+  "/:address/transactions",
   async (req: Request, res: Response) => {
     try {
-      res.json(await fetchUtxosForAddress(req.params.address, req.models));
+      const address = req.params.address;
+
+      const data = await req.models.Transaction.findAll({
+        where: {
+          [Op.or]: [
+            {
+              vin: {
+                [Op.contains]: [address],
+              },
+            },
+            {
+              vout: {
+                [Op.contains]: [address],
+              },
+            },
+          ],
+        },
+      });
+
+      res.json(data);
     } catch (e) {
-      res.json({ error: "Internal server error" });
+      console.log(e);
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 );
 
-UtxoRouter.get(
-  "/fetch_by_address/:address/:amount",
+AddressRouter.get("/:address/utxos", async (req: Request, res: Response) => {
+  try {
+    res.json(await fetchUtxosForAddress(req.params.address, req.models));
+  } catch (e) {
+    res.json({ error: "Internal server error" });
+  }
+});
+
+AddressRouter.get(
+  "/:address/utxos/:amount",
   async (req: Request, res: Response) => {
     try {
       if (isNaN(Number(req.params.amount))) {
@@ -92,4 +134,4 @@ UtxoRouter.get(
   }
 );
 
-export default UtxoRouter;
+export default AddressRouter;
