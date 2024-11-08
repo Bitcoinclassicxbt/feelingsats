@@ -1,5 +1,5 @@
 import { DataTypes, Model, Sequelize } from "sequelize";
-import { Transaction } from "../../types";
+import { Transaction, Vin, Vout } from "../../types";
 
 type TransactionAttributes = Transaction;
 
@@ -13,8 +13,8 @@ export class TransactionModel
   declare locktime: number;
   declare version: number;
   declare vsize: number;
-  declare vin: any;
-  declare vout: any;
+  declare vin: Vin[];
+  declare vout: Vout[];
 
   static initialize(sequelize: Sequelize): typeof TransactionModel {
     TransactionModel.init(
@@ -23,7 +23,7 @@ export class TransactionModel
           type: DataTypes.STRING,
           primaryKey: true,
           allowNull: false,
-          field: "txid", // Explicitly specify the field name
+          field: "txid",
         },
         hash: {
           type: DataTypes.STRING,
@@ -57,7 +57,17 @@ export class TransactionModel
       {
         sequelize,
         tableName: "transactions",
-        timestamps: false, // Assuming you don't need createdAt/updatedAt
+        timestamps: false,
+        indexes: [
+          {
+            fields: [sequelize.literal(`(vin->>'address')`)],
+            using: "BTREE",
+          },
+          {
+            fields: [sequelize.literal(`(vout->>'address')`)],
+            using: "BTREE",
+          },
+        ],
       }
     );
     return TransactionModel;
