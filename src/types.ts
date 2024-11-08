@@ -17,11 +17,16 @@ export type Setting = {
   value: string;
 };
 
+export type TransactionAttributes = {
+  key: string;
+  value: string;
+};
+
 export type UTXO = {
   txid: string;
   vout: number;
   address: string;
-  amount: bigint;
+  amount: string;
   hex: string;
   block: number;
   block_hash: string;

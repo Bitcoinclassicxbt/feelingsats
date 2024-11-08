@@ -1,4 +1,4 @@
-import { Sequelize, DataTypes, Model, Optional } from "sequelize";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 import { UTXO } from "../../types";
 
 type UTXOAttributes = UTXO & { id: number };
@@ -13,7 +13,7 @@ export class UtxoModel
   declare txid: string;
   declare vout: number;
   declare address: string;
-  declare amount: bigint;
+  declare amount: string;
   declare hex: string;
   declare block: number;
   declare block_hash: string;
