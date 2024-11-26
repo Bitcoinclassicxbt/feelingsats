@@ -17,9 +17,9 @@ const requiredEnvFields = [
   "DB_NAME",
   "RPC_BASE_URL",
   "RPC_USERNAME",
-  "RPC_PASSWORD"
+  "RPC_PASSWORD",
   "API_PORT",
-  "USE_RATE_LIMIT",
+  "USE_RATE_LIMIT"
 ];
 
 const start = async () => {
