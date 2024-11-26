@@ -16,8 +16,9 @@ const requiredEnvFields = [
   "DB_PORT",
   "DB_NAME",
   "RPC_BASE_URL",
+  "RPC_USERNAME",
+  "RPC_PASSWORD"
   "API_PORT",
-  "INTERNAL_API_PORT",
   "USE_RATE_LIMIT",
 ];
 
