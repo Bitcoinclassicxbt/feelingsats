@@ -58,16 +58,6 @@ export class TransactionModel
         sequelize,
         tableName: "transactions",
         timestamps: false,
-        indexes: [
-          {
-            fields: [sequelize.literal(`(vin->>'address')`)],
-            using: "BTREE",
-          },
-          {
-            fields: [sequelize.literal(`(vout->>'address')`)],
-            using: "BTREE",
-          },
-        ],
       }
     );
     return TransactionModel;
