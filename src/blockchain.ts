@@ -67,24 +67,67 @@ export const txJsonToHex = (tx: Transaction): string => {
 export const getBlock = async (
   blockNumber: number
 ): Promise<BlockData<FullTransaction>> => {
-  try {
-    const { data } = (await axios.get(
-      `${process.env.RPC_BASE_URL}/getblock/${blockNumber}`
-    )) as APIResponse<BlockData<Transaction>>;
+  const rpcBaseURL = process.env.RPC_BASE_URL;
+  const rpcUsername = process.env.RPC_USERNAME;
+  const rpcPassword = process.env.RPC_PASSWORD;
 
-    if (isAPIError(data)) {
-      throw (
-        "Error fetching block " +
-        JSON.stringify((data as APIError)?.error ?? {})
-      );
+  if (!rpcBaseURL) {
+    throw new Error("RPC_BASE_URL is not defined in the environment variables");
+  }
+
+  try {
+    // Fetch the block hash first
+    const { data: blockHashResponse } = await axios.post(
+      rpcBaseURL,
+      {
+        jsonrpc: "1.0",
+        id: "getblockhash",
+        method: "getblockhash",
+        params: [blockNumber],
+      },
+      {
+        auth: {
+          username: rpcUsername,
+          password: rpcPassword,
+        },
+      }
+    );
+
+    const blockHash = blockHashResponse.result;
+    if (!blockHash) {
+      throw new Error("Failed to retrieve block hash.");
     }
 
-    data.tx = data.tx.map((tx: Transaction) => ({
+    // Fetch the block data using the block hash
+    const { data: blockResponse } = await axios.post(
+      rpcBaseURL,
+      {
+        jsonrpc: "1.0",
+        id: "getblock",
+        method: "getblock",
+        params: [blockHash, 2], // The second parameter `2` includes full transactions
+      },
+      {
+        auth: {
+          username: rpcUsername,
+          password: rpcPassword,
+        },
+      }
+    );
+
+    if (!blockResponse.result) {
+      throw new Error("Failed to retrieve block data.");
+    }
+
+    const blockData = blockResponse.result;
+
+    // Add `rawHex` to transactions
+    blockData.tx = blockData.tx.map((tx: Transaction) => ({
       ...tx,
       rawHex: txJsonToHex(tx),
     }));
 
-    return data as BlockData<FullTransaction>;
+    return blockData as BlockData<FullTransaction>;
   } catch (e: unknown) {
     throw (
       "Error fetching block " +
@@ -92,7 +135,6 @@ export const getBlock = async (
     );
   }
 };
-
 export const pushTx = async (
   signedTransactionHex: string
 ): Promise<APIResponse<{ txid: Transaction["txid"] }>> => {
