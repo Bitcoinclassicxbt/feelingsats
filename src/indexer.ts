@@ -48,6 +48,7 @@ const getNewUtxosFromBlock = (block: BlockData<FullTransaction>): UTXO[] => {
         hex: transaction.rawHex,
         block: block.height,
         block_hash: block.hash,
+        block_timestamp: BigInt(block.time),
       });
     }
   }

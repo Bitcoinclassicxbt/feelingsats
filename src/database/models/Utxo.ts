@@ -17,6 +17,7 @@ export class UtxoModel
   declare hex: string;
   declare block: number;
   declare block_hash: string;
+  declare block_timestamp: bigint;
 
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -55,7 +56,11 @@ export class UtxoModel
         },
         block_hash: {
           type: DataTypes.STRING,
-          allowNull: true,
+          allowNull: false,
+        },
+        block_timestamp: {
+          type: DataTypes.BIGINT,
+          allowNull: false,
         },
       },
       {

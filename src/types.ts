@@ -30,6 +30,7 @@ export type UTXO = {
   hex: string;
   block: number;
   block_hash: string;
+  block_timestamp: bigint;
 };
 
 export type APIUTXO = Omit<UTXO, "amount"> & { amount: string };

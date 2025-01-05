@@ -35,6 +35,13 @@ AddressRouter.get("/sorted-by-balance", async (req: Request, res: Response) => {
           req.models.sequelize.fn("SUM", req.models.sequelize.col("amount")),
           "balance",
         ],
+        [
+          req.models.sequelize.fn(
+            "MAX",
+            req.models.sequelize.col("block_timestamp")
+          ),
+          "lastSeen",
+        ],
       ],
       group: ["address"],
       order: [[req.models.sequelize.literal("balance"), "DESC"]],
@@ -45,7 +52,8 @@ AddressRouter.get("/sorted-by-balance", async (req: Request, res: Response) => {
 
     const result = data.map((item: any) => ({
       address: item.address,
-      balance: Number(item.balance) / 1e8,
+      balance: Number(item.balance),
+      lastSeen: Number(item.lastSeen),
     }));
 
     res.json({ page, data: result });
