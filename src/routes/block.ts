@@ -1,8 +1,15 @@
 import express, { Request, Response } from "express";
-import { BlockData, FullTransaction } from "../types";
 import { getBlock } from "../blockchain";
+import { BlockData, FullTransaction } from "../types";
+import { getCirculatingSupply } from "../utils/totalSupply";
 
 export const BlockRouter = express.Router();
+
+BlockRouter.get("/circulating-supply", (req: Request, res: Response) => {
+  const circulatingSupply = getCirculatingSupply();
+
+  res.json({ circulatingSupply });
+});
 
 BlockRouter.get("/:blocknumber", async (req: Request, res: Response) => {
   try {

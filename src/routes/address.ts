@@ -22,6 +22,39 @@ const fetchUtxosForAddress = async (
   });
 };
 
+AddressRouter.get("/sorted-by-balance", async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 100;
+    const offset = (page - 1) * limit;
+
+    const data = await req.models.Utxo.findAll({
+      attributes: [
+        "address",
+        [
+          req.models.sequelize.fn("SUM", req.models.sequelize.col("amount")),
+          "balance",
+        ],
+      ],
+      group: ["address"],
+      order: [[req.models.sequelize.literal("balance"), "DESC"]],
+      limit,
+      offset,
+      raw: true,
+    });
+
+    const result = data.map((item: any) => ({
+      address: item.address,
+      balance: Number(item.balance) / 1e8,
+    }));
+
+    res.json({ page, data: result });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 AddressRouter.get("/:address/balance", async (req: Request, res: Response) => {
   try {
     const address = req.params.address;
