@@ -134,7 +134,7 @@ export const runIndexer = async (models: Models) => {
   // Retrieve the last processed block once
   const lastProcessedBlock = await getLastProcessedBlock(models);
   let currentBlockNum = Number(lastProcessedBlock) + 1; // Start from the next block
-
+  let deletedUtxos: UTXO[] = [];
   while (true) {
     try {
       log(`Processing block ${currentBlockNum}...`);
@@ -145,7 +145,7 @@ export const runIndexer = async (models: Models) => {
       }
 
       if (blockargs.delete_utxos.length > 0) {
-        const deletedUtxos = await models.Utxo.findAll({
+        deletedUtxos = await models.Utxo.findAll({
           where: {
             [Op.or]: blockargs.delete_utxos.map((utxo) => ({
               txid: utxo.txid,
@@ -153,7 +153,6 @@ export const runIndexer = async (models: Models) => {
             })),
           },
         });
-
         await models.Utxo.destroy({
           where: {
             [Op.or]: blockargs.delete_utxos.map((utxo) => ({
@@ -162,22 +161,25 @@ export const runIndexer = async (models: Models) => {
             })),
           },
         });
-
-        const updateLastSeenAddresses = deletedUtxos.map(
-          (utxo) => utxo.address
-        );
-
-        await models.Address.update(
-          { lastSeen: blockargs.block_data.time },
-          {
-            where: {
-              address: {
-                [Op.in]: updateLastSeenAddresses,
-              },
-            },
-          }
-        );
       }
+
+      const updateLastSeenAddresses = [
+        deletedUtxos.map((utxo) => utxo.address),
+        ...blockargs.block_data.tx[0].vout.map(
+          (vout) => vout.scriptPubKey.addresses
+        ),
+      ].flat(Infinity) as string[];
+
+      await models.Address.update(
+        { lastSeen: blockargs.block_data.time },
+        {
+          where: {
+            address: {
+              [Op.in]: updateLastSeenAddresses,
+            },
+          },
+        }
+      );
 
       if (blockargs.transactions.length > 0) {
         await models.Transaction.bulkCreate(blockargs.transactions);
