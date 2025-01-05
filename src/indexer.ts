@@ -170,16 +170,15 @@ export const runIndexer = async (models: Models) => {
         ),
       ].flat(Infinity) as string[];
 
-      await models.Address.update(
-        { lastSeen: blockargs.block_data.time },
-        {
-          where: {
-            address: {
-              [Op.in]: updateLastSeenAddresses,
-            },
-          },
-        }
-      );
+      // Prepare data for bulk create/update
+      const addressData = updateLastSeenAddresses.map((address) => ({
+        address,
+        lastSeen: blockargs.block_data.time,
+      }));
+
+      await models.Address.bulkCreate(addressData, {
+        updateOnDuplicate: ["lastSeen"], // Fields to update if a record with the same primary key exists
+      });
 
       if (blockargs.transactions.length > 0) {
         await models.Transaction.bulkCreate(blockargs.transactions);
