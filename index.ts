@@ -48,6 +48,7 @@ const start = async () => {
   }
 
   await updateCirculatingSupply(models);
+  await updateHolders(models);
 
   setInterval(async () => {
     await updateCirculatingSupply(models);
