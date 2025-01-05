@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 import { Models } from "../database";
 import { UTXO } from "../types";
 import { binarySearchForLowest } from "../utils";
-import { getHolders } from "../utils/holders";
+import { getHolders, IHolder } from "../utils/holders";
 export const AddressRouter = express.Router();
 
 const fetchUtxosForAddress = async (
@@ -28,7 +28,7 @@ AddressRouter.get("/sorted-by-balance", async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 100;
     const offset = (page - 1) * limit;
 
-    const allHolders = getHolders();
+    const allHolders: IHolder[] = req.global.holders;
 
     res.json({ page, data: allHolders.slice(offset, offset + limit) });
   } catch (e) {

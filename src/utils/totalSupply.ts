@@ -1,12 +1,5 @@
 import { Models } from "../database";
-
-let circulatingSupply = 0;
-
-export const getCirculatingSupply = () => {
-  return circulatingSupply;
-};
-
-export const updateCirculatingSupply = async (models: Models) => {
+export const getCirculatingSupply = async (models: Models) => {
   try {
     const data = (await models.Utxo.findAll({
       attributes: [
@@ -18,7 +11,7 @@ export const updateCirculatingSupply = async (models: Models) => {
       raw: true,
     })) as any;
 
-    circulatingSupply = Number(data[0].totalSupply) / 1e8;
+    return Number(data[0].totalSupply) / 1e8;
   } catch (e) {
     console.log(e);
   }

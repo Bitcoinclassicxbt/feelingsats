@@ -1,18 +1,13 @@
 import { Models } from "../database";
 
-type Holder = {
+export type IHolder = {
   address: string;
   balance: number;
   position?: number;
   lastSeen?: number;
 };
 
-let holders: Holder[] = [];
-export const getHolders = () => {
-  return holders;
-};
-
-export const updateHolders = async (models: Models) => {
+export const getHolders = async (models: Models) => {
   try {
     const UtxoResponse = await models.Utxo.findAll({
       attributes: [
@@ -24,7 +19,7 @@ export const updateHolders = async (models: Models) => {
       raw: true,
     });
 
-    const holders: Holder[] = UtxoResponse.map((utxo: any, index: number) => ({
+    const holders: IHolder[] = UtxoResponse.map((utxo: any, index: number) => ({
       address: utxo.address,
       balance: Number(utxo.balance),
       position: index + 1,

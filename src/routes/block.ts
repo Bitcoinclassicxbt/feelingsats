@@ -1,12 +1,11 @@
 import express, { Request, Response } from "express";
 import { getBlock } from "../blockchain";
 import { BlockData, FullTransaction } from "../types";
-import { getCirculatingSupply } from "../utils/totalSupply";
 
 export const BlockRouter = express.Router();
 
 BlockRouter.get("/circulating-supply", (req: Request, res: Response) => {
-  const circulatingSupply = getCirculatingSupply();
+  const circulatingSupply = req.global.circulatingSupply;
 
   res.json({ circulatingSupply });
 });
