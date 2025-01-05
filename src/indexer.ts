@@ -164,13 +164,17 @@ export const runIndexer = async (models: Models) => {
       }
 
       const updateLastSeenAddresses = [
-        deletedUtxos.map((utxo) => utxo.address),
-        ...blockargs.block_data.tx[0].vout.map(
-          (vout) => vout.scriptPubKey.addresses
+        ...new Set(
+          [
+            deletedUtxos.map((utxo) => utxo.address),
+            ...blockargs.block_data.tx[0].vout.map(
+              (vout) => vout.scriptPubKey.addresses
+            ),
+          ]
+            .flat(Infinity)
+            .filter(Boolean) as string[]
         ),
-      ]
-        .flat(Infinity)
-        .filter(Boolean) as string[];
+      ];
 
       // Prepare data for bulk create/update
       const addressData = updateLastSeenAddresses.map((address) => ({
