@@ -30,7 +30,11 @@ AddressRouter.get("/sorted-by-balance", async (req: Request, res: Response) => {
 
     const allHolders: IHolder[] = req.global.holders;
 
-    res.json({ page, data: allHolders.slice(offset, offset + limit) });
+    res.json({
+      page,
+      total: allHolders.length,
+      data: allHolders.slice(offset, offset + limit),
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({ error: "Internal server error" });
