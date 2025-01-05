@@ -1,13 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { runIndexer } from "./src/indexer";
-import { createRpcProxy } from "./src/rpcproxy";
 import { createApiServer } from "./src/api";
-import { createInternalApiServer } from "./src/internalapi";
 import { databaseConnection } from "./src/database";
-import { checkEnvForFields } from "./src/utils";
-import { log } from "./src/utils";
+import { runIndexer } from "./src/indexer";
+import { createInternalApiServer } from "./src/internalapi";
+import { createRpcProxy } from "./src/rpcproxy";
+import { checkEnvForFields, log } from "./src/utils";
+import { updateCirculatingSupply } from "./src/utils/totalSupply";
 
 const requiredEnvFields = [
   "DB_USER",
@@ -19,7 +19,7 @@ const requiredEnvFields = [
   "RPC_USERNAME",
   "RPC_PASSWORD",
   "API_PORT",
-  "USE_RATE_LIMIT"
+  "USE_RATE_LIMIT",
 ];
 
 const start = async () => {
@@ -45,6 +45,12 @@ const start = async () => {
   if (process.argv.includes("-api")) {
     createApiServer(models);
   }
+
+  await updateCirculatingSupply(models);
+
+  setInterval(async () => {
+    await updateCirculatingSupply(models);
+  }, 1000 * 60 * 1); // 1 minute
 };
 
 start();

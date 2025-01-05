@@ -27,6 +27,7 @@
     "@types/express": "^5.0.0",
     "@types/http-proxy": "^1.17.15",
     "@types/sequelize": "^4.28.20",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "tsx": "^4.19.2"
   }
 }
