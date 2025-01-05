@@ -162,15 +162,28 @@ export const runIndexer = async (models: Models) => {
           },
         });
       }
+      const newUtxoAddresses = blockargs.add_utxos.map((utxo) => utxo.address);
+      const existingAddresses = await models.Address.findAll({
+        where: {
+          address: newUtxoAddresses, // Automatically handled as IN query
+        },
+        attributes: ["address"], // Only fetch the address field
+        raw: true, // Return plain objects instead of Sequelize instances
+      });
+
+      // Extract existing addresses into a simple array
+      const existingAddressSet = new Set(
+        existingAddresses.map((addr) => addr.address)
+      );
+
+      // Find addresses not in the database
+      const nonExistingAddresses = newUtxoAddresses.filter(
+        (address) => !existingAddressSet.has(address)
+      );
 
       const updateLastSeenAddresses = [
         ...new Set(
-          [
-            deletedUtxos.map((utxo) => utxo.address),
-            ...blockargs.block_data.tx[0].vout.map(
-              (vout) => vout.scriptPubKey.addresses
-            ),
-          ]
+          [deletedUtxos.map((utxo) => utxo.address), ...nonExistingAddresses]
             .flat(Infinity)
             .filter(Boolean) as string[]
         ),

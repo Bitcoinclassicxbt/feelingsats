@@ -41,6 +41,8 @@ export const getHolders = async (models: Models) => {
     holders.forEach((holder) => {
       holder.lastSeen = lastSeenMap[holder.address];
     });
+
+    return holders;
   } catch (e) {
     console.log(e);
   }
