@@ -8,6 +8,7 @@ import { createInternalApiServer } from "./src/internalapi";
 import { createRpcProxy } from "./src/rpcproxy";
 import { checkEnvForFields, log } from "./src/utils";
 import { updateCirculatingSupply } from "./src/utils/totalSupply";
+import { updateHolders } from "./src/utils/holders";
 
 const requiredEnvFields = [
   "DB_USER",
@@ -50,6 +51,10 @@ const start = async () => {
 
   setInterval(async () => {
     await updateCirculatingSupply(models);
+  }, 1000 * 60 * 1); // 1 minute
+
+  setInterval(async () => {
+    await updateHolders(models);
   }, 1000 * 60 * 1); // 1 minute
 };
 

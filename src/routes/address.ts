@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 import { Models } from "../database";
 import { UTXO } from "../types";
 import { binarySearchForLowest } from "../utils";
-
+import { getHolders } from "../utils/holders";
 export const AddressRouter = express.Router();
 
 const fetchUtxosForAddress = async (
@@ -25,38 +25,12 @@ const fetchUtxosForAddress = async (
 AddressRouter.get("/sorted-by-balance", async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = 100;
+    const limit = parseInt(req.query.limit as string) || 100;
     const offset = (page - 1) * limit;
 
-    const data = await req.models.Utxo.findAll({
-      attributes: [
-        "address",
-        [
-          req.models.sequelize.fn("SUM", req.models.sequelize.col("amount")),
-          "balance",
-        ],
-        [
-          req.models.sequelize.fn(
-            "MAX",
-            req.models.sequelize.col("block_timestamp")
-          ),
-          "lastSeen",
-        ],
-      ],
-      group: ["address"],
-      order: [[req.models.sequelize.literal("balance"), "DESC"]],
-      limit,
-      offset,
-      raw: true,
-    });
+    const allHolders = getHolders();
 
-    const result = data.map((item: any) => ({
-      address: item.address,
-      balance: Number(item.balance),
-      lastSeen: Number(item.lastSeen),
-    }));
-
-    res.json({ page, data: result });
+    res.json({ page, data: allHolders.slice(offset, offset + limit) });
   } catch (e) {
     console.log(e);
     res.status(500).json({ error: "Internal server error" });

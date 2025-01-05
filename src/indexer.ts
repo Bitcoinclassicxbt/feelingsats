@@ -114,6 +114,7 @@ type UpdateBlockArgs = {
   transactions: Transaction[];
   add_utxos: UTXO[];
   delete_utxos: UTXODeleteKey[];
+  block_data: BlockData<FullTransaction>;
 };
 
 const createBlockArgs = async (blockNum: number): Promise<UpdateBlockArgs> => {
@@ -123,6 +124,7 @@ const createBlockArgs = async (blockNum: number): Promise<UpdateBlockArgs> => {
     transactions: getTransactionsFromBlock(block),
     add_utxos: getNewUtxosFromBlock(block),
     delete_utxos: getUsedUtxosFromBlock(block),
+    block_data: block,
   };
 };
 
@@ -143,6 +145,15 @@ export const runIndexer = async (models: Models) => {
       }
 
       if (blockargs.delete_utxos.length > 0) {
+        const deletedUtxos = await models.Utxo.findAll({
+          where: {
+            [Op.or]: blockargs.delete_utxos.map((utxo) => ({
+              txid: utxo.txid,
+              vout: utxo.vout,
+            })),
+          },
+        });
+
         await models.Utxo.destroy({
           where: {
             [Op.or]: blockargs.delete_utxos.map((utxo) => ({
@@ -151,6 +162,21 @@ export const runIndexer = async (models: Models) => {
             })),
           },
         });
+
+        const updateLastSeenAddresses = deletedUtxos.map(
+          (utxo) => utxo.address
+        );
+
+        await models.Address.update(
+          { lastSeen: blockargs.block_data.time },
+          {
+            where: {
+              address: {
+                [Op.in]: updateLastSeenAddresses,
+              },
+            },
+          }
+        );
       }
 
       if (blockargs.transactions.length > 0) {

@@ -2,12 +2,14 @@ import { Sequelize } from "sequelize";
 import { log } from "../utils";
 import { SettingModel } from "./models/Setting";
 import { TransactionModel } from "./models/Transaction";
+import { AddressModel } from "./models/Address";
 import { UtxoModel } from "./models/Utxo";
 
 export interface Models {
   Utxo: typeof UtxoModel;
   Setting: typeof SettingModel;
   Transaction: typeof TransactionModel;
+  Address: typeof AddressModel;
   sequelize: Sequelize;
 }
 
@@ -30,6 +32,7 @@ export async function databaseConnection(forceSync: boolean): Promise<Models> {
   models.Utxo = UtxoModel.initialize(sequelize);
   models.Setting = SettingModel.initialize(sequelize);
   models.Transaction = TransactionModel.initialize(sequelize);
+  models.Address = AddressModel.initialize(sequelize);
   models.sequelize = sequelize;
 
   log("Connecting to database...", "Database");
