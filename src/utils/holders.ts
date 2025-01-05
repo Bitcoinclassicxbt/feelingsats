@@ -4,7 +4,7 @@ export type IHolder = {
   address: string;
   balance: number;
   position?: number;
-  lastSeen?: number;
+  last_seen?: number;
 };
 
 export const getHolders = async (models: Models) => {
@@ -39,7 +39,7 @@ export const getHolders = async (models: Models) => {
     );
 
     holders.forEach((holder) => {
-      holder.lastSeen = lastSeenMap[holder.address];
+      holder.last_seen = lastSeenMap[holder.address];
     });
 
     return holders;
