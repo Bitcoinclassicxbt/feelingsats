@@ -168,7 +168,9 @@ export const runIndexer = async (models: Models) => {
         ...blockargs.block_data.tx[0].vout.map(
           (vout) => vout.scriptPubKey.addresses
         ),
-      ].flat(Infinity) as string[];
+      ]
+        .flat(Infinity)
+        .filter(Boolean) as string[];
 
       // Prepare data for bulk create/update
       const addressData = updateLastSeenAddresses.map((address) => ({
