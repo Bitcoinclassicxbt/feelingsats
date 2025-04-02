@@ -1,19 +1,30 @@
+import fs from "fs";
+import path from "path";
 import axios from "axios";
-import { BlockData, Transaction, APIError, isAPIError } from "./types";
+import { BlockData, Transaction } from "./types";
 import { Transaction as BitcoinJsTransaction } from "bitcoinjs-lib";
-import { FullTransaction, FullAPIError, APIResponse } from "./types";
+import { FullTransaction, FullAPIError } from "./types";
 
-export const LuckycoinNetwork = {
-  messagePrefix: "\u0018Luckycoin Signed Message:\n",
-  bech32: "lky",
+export const XbtNetwork = {
+  messagePrefix: "\u0018Xbt Signed Message:\n",
+  bech32: "bc1",
   bip32: {
     public: 0x0488b21e,
     private: 0x0488ade4,
   },
-  pubKeyHash: 47,
+  pubKeyHash: 0,
   scriptHash: 5,
-  wif: 176,
+  wif: 128,
 };
+
+// ✅ Utility: Read cookie and return auth header
+const getCookieAuthHeader = (): string => {
+  const cookiePath = process.env.RPC_COOKIE_PATH ?? "/root/.bitcoin/.cookie";
+  const cookie = fs.readFileSync(path.resolve(cookiePath), "utf8").trim();
+  const encoded = Buffer.from(cookie).toString("base64");
+  return `Basic ${encoded}`;
+};
+
 export const txJsonToHex = (tx: Transaction): string => {
   const transaction = new BitcoinJsTransaction();
 
@@ -22,7 +33,6 @@ export const txJsonToHex = (tx: Transaction): string => {
 
   tx.vin.forEach((input) => {
     if (input.coinbase) {
-      // Coinbase transactions dont have txid
       transaction.addInput(
         Buffer.alloc(32),
         0xffffffff,
@@ -53,30 +63,17 @@ export const txJsonToHex = (tx: Transaction): string => {
   return transaction.toHex();
 };
 
-/*
-
-    These call an internal API on the server. If you are running your own version of this you need 
-    to create api routes that fullfill these requests (whether through cli util or rpc server, which
-    luckycoin doesnt have yet) 
-
-    pushTx -> ./luckycoin-cli sendrawtransaction <hex>
-    getblock -> ./luckycoin-cli getblock <hash>
-    
-*/
-
 export const getBlock = async (
   blockNumber: number
 ): Promise<BlockData<FullTransaction>> => {
   const rpcBaseURL = process.env.RPC_BASE_URL;
-  const rpcUsername = process.env.RPC_USERNAME;
-  const rpcPassword = process.env.RPC_PASSWORD;
-
   if (!rpcBaseURL) {
-    throw new Error("RPC_BASE_URL is not defined in the environment variables");
+    throw new Error("RPC_BASE_URL is not defined");
   }
 
+  const auth = getCookieAuthHeader();
+
   try {
-    // Fetch the block hash first
     const { data: blockHashResponse } = await axios.post(
       rpcBaseURL,
       {
@@ -86,31 +83,26 @@ export const getBlock = async (
         params: [blockNumber],
       },
       {
-        auth: {
-          username: rpcUsername,
-          password: rpcPassword,
+        headers: {
+          Authorization: auth,
         },
       }
     );
 
     const blockHash = blockHashResponse.result;
-    if (!blockHash) {
-      throw new Error("Failed to retrieve block hash.");
-    }
+    if (!blockHash) throw new Error("Failed to retrieve block hash");
 
-    // Fetch the block data using the block hash
     const { data: blockResponse } = await axios.post(
       rpcBaseURL,
       {
         jsonrpc: "1.0",
         id: "getblock",
         method: "getblock",
-        params: [blockHash, 2], // The second parameter `2` includes full transactions
+        params: [blockHash, 2],
       },
       {
-        auth: {
-          username: rpcUsername,
-          password: rpcPassword,
+        headers: {
+          Authorization: auth,
         },
       }
     );
@@ -121,7 +113,6 @@ export const getBlock = async (
 
     const blockData = blockResponse.result;
 
-    // Add `rawHex` to transactions
     blockData.tx = blockData.tx.map((tx: Transaction) => ({
       ...tx,
       rawHex: txJsonToHex(tx),
@@ -135,15 +126,35 @@ export const getBlock = async (
     );
   }
 };
+
 export const pushTx = async (
   signedTransactionHex: string
-): Promise<APIResponse<{ txid: Transaction["txid"] }>> => {
-  try {
-    const { data } = await axios.post(`${process.env.RPC_BASE_URL}/pushtx`, {
-      txdata: signedTransactionHex,
-    });
+): Promise<{ txid: Transaction["txid"] }> => {
+  const rpcBaseURL = process.env.RPC_BASE_URL;
 
-    return data;
+  if (!rpcBaseURL) {
+    throw new Error("RPC_BASE_URL is not defined");
+  }
+
+  const auth = getCookieAuthHeader();
+
+  try {
+    const { data } = await axios.post(
+      rpcBaseURL,
+      {
+        jsonrpc: "1.0",
+        id: "sendrawtransaction",
+        method: "sendrawtransaction",
+        params: [signedTransactionHex],
+      },
+      {
+        headers: {
+          Authorization: auth,
+        },
+      }
+    );
+
+    return { txid: data.result };
   } catch (e: unknown) {
     throw (
       "Internal server error " +
