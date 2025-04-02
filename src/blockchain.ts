@@ -136,11 +136,7 @@ export const getBlock = async (
 
         fullTxs.push(txResponse.result as FullTransaction);
       } catch (e: unknown) {
-        console.error(
-          `Failed to fetch transaction ${txid}:`,
-          (e as any)?.response?.data || e
-        );
-        throw new Error(`Failed to fetch transaction ${txid}`);
+        continue;
       }
     }
 
