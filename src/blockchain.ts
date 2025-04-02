@@ -113,8 +113,6 @@ export const getBlock = async (
 
     const blockData = blockResponse.result;
 
-    console.log(blockData);
-
     const fullTxs: FullTransaction[] = [];
 
     for (const txid of blockData.tx as string[]) {
