@@ -98,7 +98,7 @@ export const getBlock = async (
         jsonrpc: "1.0",
         id: "getblock",
         method: "getblock",
-        params: [blockHash, 2],
+        params: [blockHash, true],
       },
       {
         headers: {
