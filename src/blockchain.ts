@@ -113,6 +113,8 @@ export const getBlock = async (
 
     const blockData = blockResponse.result;
 
+    console.log(blockData);
+
     blockData.tx = blockData.tx.map((tx: Transaction) => ({
       ...tx,
       rawHex: txJsonToHex(tx),
