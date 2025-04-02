@@ -115,6 +115,25 @@ export const getBlock = async (
 
     console.log(blockData);
 
+    blockData.tx = (await Promise.all(
+      blockData.tx.map((txid: string) =>
+        axios.post(
+          rpcBaseURL,
+          {
+            jsonrpc: "1.0",
+            id: "getrawtransaction",
+            method: "getrawtransaction",
+            params: [txid, true],
+          },
+          {
+            headers: {
+              Authorization: auth,
+            },
+          }
+        )
+      )
+    )) as FullTransaction[];
+
     blockData.tx = blockData.tx.map((tx: Transaction) => ({
       ...tx,
       rawHex: txJsonToHex(tx),
