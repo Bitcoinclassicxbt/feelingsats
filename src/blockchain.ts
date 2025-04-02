@@ -115,9 +115,11 @@ export const getBlock = async (
 
     console.log(blockData);
 
-    blockData.tx = (await Promise.all(
-      blockData.tx.map((txid: string) =>
-        axios.post(
+    const fullTxs: FullTransaction[] = [];
+
+    for (const txid of blockData.tx as string[]) {
+      try {
+        const { data: txResponse } = await axios.post(
           rpcBaseURL,
           {
             jsonrpc: "1.0",
@@ -130,9 +132,19 @@ export const getBlock = async (
               Authorization: auth,
             },
           }
-        )
-      )
-    )) as FullTransaction[];
+        );
+
+        fullTxs.push(txResponse.result as FullTransaction);
+      } catch (e: unknown) {
+        console.error(
+          `Failed to fetch transaction ${txid}:`,
+          (e as any)?.response?.data || e
+        );
+        throw new Error(`Failed to fetch transaction ${txid}`);
+      }
+    }
+
+    blockData.tx = fullTxs;
 
     blockData.tx = blockData.tx.map((tx: Transaction) => ({
       ...tx,
