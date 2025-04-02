@@ -125,7 +125,7 @@ export const getBlock = async (
             jsonrpc: "1.0",
             id: "getrawtransaction",
             method: "getrawtransaction",
-            params: [txid, true],
+            params: [txid, 1],
           },
           {
             headers: {
