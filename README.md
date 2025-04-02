@@ -1,11 +1,10 @@
 ![clover](https://github.com/user-attachments/assets/3ca7d1a4-cb76-4bd1-8a91-61441ca338c3)
 
-# FeelingLucky
+# FeelingSats
 
-Feelinglucky is an indexer that creates a queryable dataset for Luckycoin.
+Feelingsats is an indexer that creates a queryable dataset for XBT.
 
-A version of this indexer can be found at:
-https://feelinglucky.satsignal.io/
+
 
 ## Installation (Ubuntu)
 
@@ -30,7 +29,7 @@ check agains thtis by seeing if the error key is present in the response.
 
 Get LKY block information by block number
 
-https://feelinglucky.satsignal.io/block/50
+https://feelingsats.satsignal.io/block/50
 
 success respose: 200
 
@@ -90,9 +89,9 @@ success respose: 200
 
 #### POST /transaction/broadcast
 
-Broadcast a signed transaction on Luckycoin network
+Broadcast a signed transaction on xbt network
 
-https://feelinglucky.satsignal.io/transaction/broadcast
+https://feelingsats.satsignal.io/transaction/broadcast
 
 success respose: 200
 
@@ -108,7 +107,7 @@ success respose: 200
 
 Get all UTXOs for a given address
 
-https://feelinglucky.satsignal.io/utxos/all_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy
+https://feelingsats.satsignal.io/utxos/all_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy
 
 ```json
 [
@@ -128,7 +127,7 @@ https://feelinglucky.satsignal.io/utxos/all_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7Z
 
 Fetch relevant utxos for a given address and amount. Used for creating a transaction and wallet management.
 
-https://feelinglucky.satsignal.io/utxos/fetch_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy/500
+https://feelingsats.satsignal.io/utxos/fetch_by_address/LHCRZRAXDpQfnwZMBs9Fcjx7ZfGecQdjEy/500
 
 ```json
 [
