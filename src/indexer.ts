@@ -196,13 +196,9 @@ export const runIndexer = async (models: Models) => {
         lastSeen: blockargs.block_data.time,
       }));
 
-      console.log("Address data:", addressData);
-
       await models.Address.bulkCreate(addressData, {
         updateOnDuplicate: ["lastSeen"], // Fields to update if a record with the same primary key exists
       });
-
-      console.log(blockargs.transactions);
 
       if (blockargs.transactions.length > 0) {
         await models.Transaction.bulkCreate(blockargs.transactions);
