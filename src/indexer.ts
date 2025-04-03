@@ -9,6 +9,7 @@ import {
   UTXODeleteKey,
 } from "./types";
 import { log, sleep } from "./utils";
+import e from "express";
 
 const getLastProcessedBlock = async (models: Models) => {
   const { Setting } = models;
@@ -195,9 +196,13 @@ export const runIndexer = async (models: Models) => {
         lastSeen: blockargs.block_data.time,
       }));
 
+      console.log("Address data:", addressData);
+
       await models.Address.bulkCreate(addressData, {
         updateOnDuplicate: ["lastSeen"], // Fields to update if a record with the same primary key exists
       });
+
+      console.log(blockargs.transactions);
 
       if (blockargs.transactions.length > 0) {
         await models.Transaction.bulkCreate(blockargs.transactions);
@@ -208,6 +213,7 @@ export const runIndexer = async (models: Models) => {
       // Increment the block number for the next iteration
       currentBlockNum++;
     } catch (error) {
+      console.error(error);
       log(`Error processing block ${currentBlockNum}: ${error}`);
       log("Waiting for new blocks...");
 
