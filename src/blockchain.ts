@@ -147,11 +147,7 @@ export const getBlock = async (
 
     return blockData as BlockData<FullTransaction>;
   } catch (e: unknown) {
-    console.error("Error fetching block data:", e);
-    throw (
-      "Error fetching block " +
-      JSON.stringify((e as FullAPIError)?.response?.data ?? {})
-    );
+    throw "Error fetching block";
   }
 };
 
