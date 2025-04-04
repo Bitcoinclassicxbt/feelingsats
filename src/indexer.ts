@@ -202,7 +202,9 @@ export const runIndexer = async (models: Models) => {
       });
 
       if (blockargs.transactions.length > 0) {
-        await models.Transaction.bulkCreate(blockargs.transactions);
+        await models.Transaction.bulkCreate(blockargs.transactions, {
+          updateOnDuplicate: ["txid"],
+        });
       }
 
       await setLastProcessedBlock(models, currentBlockNum);
