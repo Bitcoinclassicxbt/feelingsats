@@ -63,6 +63,12 @@ export class TransactionModel
         sequelize,
         tableName: "transactions",
         timestamps: false,
+        indexes: [
+          {
+            fields: ["block_height"],
+            using: "BTREE",
+          },
+        ],
       }
     );
     return TransactionModel;
