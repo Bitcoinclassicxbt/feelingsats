@@ -218,7 +218,7 @@ export const runIndexer = async (models: Models) => {
       // Increment the block number for the next iteration
       currentBlockNum++;
     } catch (error) {
-      log(`Error processing block ${currentBlockNum}: ${error}`);
+      log(`Error processing block ${currentBlockNum}`);
       log("Waiting for new blocks...");
 
       // Wait for new blocks using sleep from ./utils
