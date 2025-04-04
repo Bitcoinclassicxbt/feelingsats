@@ -7,6 +7,7 @@ export class TransactionModel
   extends Model<TransactionAttributes>
   implements TransactionAttributes
 {
+  declare block_height: number;
   declare txid: string;
   declare hash: string;
   declare size: number;
@@ -27,6 +28,10 @@ export class TransactionModel
         },
         hash: {
           type: DataTypes.STRING,
+          allowNull: false,
+        },
+        block_height: {
+          type: DataTypes.INTEGER,
           allowNull: false,
         },
         size: {

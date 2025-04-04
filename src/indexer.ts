@@ -82,6 +82,7 @@ const getTransactionsFromBlock = (block: BlockData<FullTransaction>) => {
   const transactions = block.tx.map((tx) => {
     return {
       txid: tx.txid,
+      block_height: block.height,
       hash: tx.hash,
       size: tx.size,
       locktime: tx.locktime,

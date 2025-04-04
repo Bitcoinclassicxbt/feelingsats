@@ -62,6 +62,7 @@ export type BlockData<T extends Transaction | FullTransaction> = {
 
 export type Transaction = {
   txid: string;
+  block_height: number;
   hash: string;
   size: number;
   vsize: number;
