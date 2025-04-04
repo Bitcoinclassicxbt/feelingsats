@@ -143,7 +143,11 @@ export const runIndexer = async (models: Models) => {
       const blockargs = await createBlockArgs(currentBlockNum);
 
       if (blockargs.add_utxos.length > 0) {
-        await models.Utxo.bulkCreate(blockargs.add_utxos);
+        await models.Utxo.bulkCreate(blockargs.add_utxos, {
+          updateOnDuplicate: Object.keys(
+            models.Utxo.getAttributes()
+          ) as (keyof UTXO)[],
+        });
       }
 
       if (blockargs.delete_utxos.length > 0) {
@@ -203,7 +207,9 @@ export const runIndexer = async (models: Models) => {
 
       if (blockargs.transactions.length > 0) {
         await models.Transaction.bulkCreate(blockargs.transactions, {
-          updateOnDuplicate: ["txid"],
+          updateOnDuplicate: Object.keys(
+            models.Transaction.getAttributes()
+          ) as (keyof Transaction)[],
         });
       }
 

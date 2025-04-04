@@ -79,6 +79,11 @@ export class UtxoModel
             fields: ["block"],
             using: "BTREE",
           },
+
+          {
+            unique: true,
+            fields: ["txid", "vout"],
+          },
         ],
         timestamps: true,
       }
